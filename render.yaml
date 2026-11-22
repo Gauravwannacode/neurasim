@@ -1,0 +1,27 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Deploys the FastAPI backend. The MNIST benchmark is served from the cached
+# results.json; PyTorch is not installed here (retraining returns 501).
+services:
+  - type: web
+    name: neurasim-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: CORS_ORIGINS
+        sync: false # e.g. https://neurasim.vercel.app
+      - key: SUPABASE_URL
+        sync: false # https://<project-ref>.supabase.co
+      - key: SUPABASE_JWT_SECRET
+        sync: false # only for projects still on the legacy HS256 secret
+      - key: REQUIRE_AUTH
+        value: "false"
+      - key: MAX_NEURONS
+        value: "5000"
+      - key: MAX_STEPS
+        value: "20000"

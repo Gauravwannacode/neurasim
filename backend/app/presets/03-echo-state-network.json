@@ -1,0 +1,548 @@
+{
+  "id": "echo-state-network",
+  "title": "Echo State Network (Liquid State Machine)",
+  "tags": [
+    "reservoir computing",
+    "recurrent",
+    "temporal memory"
+  ],
+  "references": [
+    "Jaeger (2001) The 'echo state' approach to analysing and training recurrent neural networks. GMD Report 148.",
+    "Maass, Natschläger & Markram (2002) Real-time computing without stable states. Neural Computation."
+  ],
+  "network": {
+    "version": 1,
+    "name": "Echo State Network (spiking reservoir)",
+    "description": "A fixed, randomly connected recurrent 'reservoir' of 400 spiking neurons (80% excitatory, 20% inhibitory) is driven by a repeating temporal sequence. The reservoir transforms the input into a rich, high-dimensional trajectory that 'echoes' recent history; only the connections to a small readout are plastic.",
+    "biology": "Reservoir computing (Jaeger's echo state networks and Maass's liquid state machines) proposes that generic cortical microcircuits act as a fading memory of their inputs, and that downstream areas only need to learn simple readouts. The spiking version shown here is the liquid state machine; the balance of excitation and inhibition keeps the reservoir at the edge of chaos.",
+    "sim": {
+      "dt": 0.1,
+      "duration": 1200,
+      "seed": 11,
+      "record_per_population": 5,
+      "chunk_ms": 25
+    },
+    "populations": [
+      {
+        "id": "res_e",
+        "label": "Reservoir (excitatory)",
+        "count": 320,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 1.5,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 330,
+          "y": 40
+        }
+      },
+      {
+        "id": "res_i",
+        "label": "Reservoir (inhibitory)",
+        "count": 80,
+        "model": "lif",
+        "params": {
+          "tau_m": 10,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 1.5,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 330,
+          "y": 280
+        }
+      },
+      {
+        "id": "readout",
+        "label": "Readout",
+        "count": 20,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 680,
+          "y": 160
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "id": "seq",
+        "label": "Temporal sequence",
+        "count": 40,
+        "kind": "pattern",
+        "rate_hz": 20,
+        "start_ms": 0,
+        "stop_ms": null,
+        "position": {
+          "x": 0,
+          "y": 140
+        },
+        "pattern": [
+          [
+            1.1,
+            5.1,
+            5.9,
+            20.0,
+            24.1,
+            37.1
+          ],
+          [
+            2.8,
+            5.2,
+            14.8,
+            20.5,
+            24.9,
+            37.9
+          ],
+          [
+            5.5,
+            11.0,
+            20.5,
+            26.5,
+            26.8,
+            31.5
+          ],
+          [
+            8.2,
+            19.3,
+            22.0,
+            22.1,
+            32.7,
+            39.2
+          ],
+          [
+            5.2,
+            9.4,
+            14.1,
+            23.7,
+            32.1,
+            34.7
+          ],
+          [
+            43.3,
+            45.9,
+            51.1,
+            57.2,
+            58.7,
+            75.8
+          ],
+          [
+            41.3,
+            48.0,
+            48.1,
+            48.7,
+            66.9,
+            76.1
+          ],
+          [
+            40.7,
+            53.6,
+            53.8,
+            58.8,
+            67.9,
+            76.2
+          ],
+          [
+            41.4,
+            42.2,
+            46.4,
+            58.4,
+            67.6,
+            79.9
+          ],
+          [
+            43.6,
+            46.9,
+            52.3,
+            52.7,
+            63.5,
+            73.8
+          ],
+          [
+            81.0,
+            85.1,
+            87.8,
+            98.7,
+            109.6,
+            113.6
+          ],
+          [
+            81.1,
+            82.5,
+            87.6,
+            103.9,
+            112.2,
+            115.8
+          ],
+          [
+            80.7,
+            83.7,
+            91.7,
+            99.7,
+            109.1,
+            114.1
+          ],
+          [
+            88.7,
+            90.3,
+            92.6,
+            93.6,
+            117.6,
+            119.1
+          ],
+          [
+            81.6,
+            82.7,
+            92.6,
+            96.2,
+            97.4,
+            109.9
+          ],
+          [
+            129.8,
+            141.8,
+            146.5,
+            147.7,
+            149.7,
+            153.8
+          ],
+          [
+            125.7,
+            126.0,
+            137.7,
+            145.0,
+            151.2,
+            157.1
+          ],
+          [
+            121.4,
+            126.5,
+            134.4,
+            150.4,
+            151.5,
+            155.8
+          ],
+          [
+            122.4,
+            125.8,
+            129.8,
+            134.3,
+            154.8,
+            160.0
+          ],
+          [
+            123.1,
+            126.4,
+            129.3,
+            139.9,
+            144.4,
+            145.5
+          ],
+          [
+            161.5,
+            164.6,
+            173.0,
+            182.2,
+            185.5,
+            185.7
+          ],
+          [
+            164.6,
+            165.2,
+            172.6,
+            174.1,
+            175.8,
+            196.5
+          ],
+          [
+            162.7,
+            163.4,
+            182.5,
+            188.0,
+            196.3,
+            198.5
+          ],
+          [
+            162.0,
+            165.8,
+            178.6,
+            187.3,
+            192.1,
+            192.3
+          ],
+          [
+            170.0,
+            170.7,
+            188.7,
+            190.4,
+            191.6,
+            192.2
+          ],
+          [
+            205.5,
+            211.4,
+            215.6,
+            219.9,
+            224.1,
+            224.2
+          ],
+          [
+            209.6,
+            211.6,
+            214.3,
+            224.9,
+            229.4,
+            232.0
+          ],
+          [
+            210.3,
+            216.6,
+            220.7,
+            222.1,
+            226.9,
+            239.2
+          ],
+          [
+            201.1,
+            203.8,
+            206.2,
+            213.0,
+            222.0,
+            232.0
+          ],
+          [
+            212.0,
+            225.5,
+            225.8,
+            230.2,
+            231.4,
+            236.1
+          ],
+          [
+            246.1,
+            253.6,
+            255.4,
+            267.6,
+            270.0,
+            275.1
+          ],
+          [
+            242.5,
+            257.9,
+            262.4,
+            262.6,
+            269.8,
+            271.3
+          ],
+          [
+            259.8,
+            262.2,
+            268.2,
+            272.1,
+            272.6,
+            275.3
+          ],
+          [
+            243.6,
+            244.3,
+            254.9,
+            258.2,
+            264.8,
+            275.0
+          ],
+          [
+            245.5,
+            256.6,
+            257.1,
+            261.1,
+            264.7,
+            274.1
+          ],
+          [
+            280.5,
+            285.4,
+            286.8,
+            300.0,
+            300.5,
+            314.5
+          ],
+          [
+            281.8,
+            282.7,
+            298.4,
+            301.4,
+            319.0,
+            319.6
+          ],
+          [
+            284.8,
+            288.3,
+            291.5,
+            296.7,
+            301.7,
+            308.6
+          ],
+          [
+            290.2,
+            296.2,
+            297.4,
+            309.5,
+            310.6,
+            314.7
+          ],
+          [
+            282.9,
+            283.2,
+            286.4,
+            294.5,
+            300.3,
+            318.8
+          ]
+        ],
+        "period_ms": 400
+      }
+    ],
+    "synapses": [
+      {
+        "id": "in_e",
+        "source": "seq",
+        "target": "res_e",
+        "weight": 6.0,
+        "weight_std": 0,
+        "p_connect": 0.15,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "ee",
+        "source": "res_e",
+        "target": "res_e",
+        "weight": 1.6,
+        "weight_std": 0.5,
+        "p_connect": 0.1,
+        "delay_ms": 1.5,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "ei",
+        "source": "res_e",
+        "target": "res_i",
+        "weight": 2.0,
+        "weight_std": 0.5,
+        "p_connect": 0.2,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "ie",
+        "source": "res_i",
+        "target": "res_e",
+        "weight": -6.0,
+        "weight_std": 1.0,
+        "p_connect": 0.25,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "ii",
+        "source": "res_i",
+        "target": "res_i",
+        "weight": -4.0,
+        "weight_std": 0,
+        "p_connect": 0.2,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_out",
+        "source": "res_e",
+        "target": "readout",
+        "weight": 2.0,
+        "weight_std": 0,
+        "p_connect": 0.15,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "stdp",
+        "stdp": {
+          "A_plus": 0.005,
+          "A_minus": 0.006,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 3
+        }
+      }
+    ]
+  }
+}

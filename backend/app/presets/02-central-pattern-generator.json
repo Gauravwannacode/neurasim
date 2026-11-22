@@ -1,0 +1,234 @@
+{
+  "id": "central-pattern-generator",
+  "title": "Central Pattern Generator",
+  "tags": [
+    "rhythm",
+    "half-centre oscillator",
+    "adaptation",
+    "locomotion"
+  ],
+  "references": [
+    "Brown (1911) The intrinsic factors in the act of progression in the mammal. Proc. R. Soc. B.",
+    "Marder & Bucher (2001) Central pattern generators and the control of rhythmic movements. Curr. Biol."
+  ],
+  "network": {
+    "version": 1,
+    "name": "Central Pattern Generator",
+    "description": "Two tonically driven populations inhibit each other (a half-centre oscillator). Whichever side is active suppresses the other until spike-frequency adaptation tires it out; the other side is then released and takes over. The result is a steady left/right (flexor/extensor) rhythm with no rhythmic input at all.",
+    "biology": "Central pattern generators in the spinal cord and brainstem produce walking, swimming, breathing and chewing rhythms even when sensory feedback is removed (Graham Brown's half-centre model, 1911). Mutual inhibition plus a slow fatigue process (here adaptation currents, in biology e.g. Ca²⁺-activated K⁺ channels) is the classic mechanism.",
+    "sim": {
+      "dt": 0.2,
+      "duration": 3000,
+      "seed": 3,
+      "record_per_population": 3,
+      "chunk_ms": 50
+    },
+    "populations": [
+      {
+        "id": "flexor",
+        "label": "Flexor half-centre",
+        "count": 25,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 18,
+          "noise": 1.0,
+          "adapt_b": 1.2,
+          "tau_w": 250
+        },
+        "position": {
+          "x": 120,
+          "y": 60
+        }
+      },
+      {
+        "id": "extensor",
+        "label": "Extensor half-centre",
+        "count": 25,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 18,
+          "noise": 1.0,
+          "adapt_b": 1.2,
+          "tau_w": 250
+        },
+        "position": {
+          "x": 120,
+          "y": 300
+        }
+      },
+      {
+        "id": "mn_f",
+        "label": "Flexor motor neurons",
+        "count": 15,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 480,
+          "y": 60
+        }
+      },
+      {
+        "id": "mn_e",
+        "label": "Extensor motor neurons",
+        "count": 15,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 480,
+          "y": 300
+        }
+      }
+    ],
+    "inputs": [],
+    "synapses": [
+      {
+        "id": "f_e",
+        "source": "flexor",
+        "target": "extensor",
+        "weight": -8.0,
+        "weight_std": 0,
+        "p_connect": 0.5,
+        "delay_ms": 2,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_f",
+        "source": "extensor",
+        "target": "flexor",
+        "weight": -8.0,
+        "weight_std": 0,
+        "p_connect": 0.5,
+        "delay_ms": 2,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "f_f",
+        "source": "flexor",
+        "target": "flexor",
+        "weight": 0.8,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 2,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_e",
+        "source": "extensor",
+        "target": "extensor",
+        "weight": 0.8,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 2,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "f_mn",
+        "source": "flexor",
+        "target": "mn_f",
+        "weight": 4.0,
+        "weight_std": 0,
+        "p_connect": 0.4,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_mn",
+        "source": "extensor",
+        "target": "mn_e",
+        "weight": 4.0,
+        "weight_std": 0,
+        "p_connect": 0.4,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      }
+    ]
+  }
+}

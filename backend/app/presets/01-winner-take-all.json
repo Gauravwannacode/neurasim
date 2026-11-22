@@ -1,0 +1,387 @@
+{
+  "id": "winner-take-all",
+  "title": "Winner-Take-All circuit",
+  "tags": [
+    "competition",
+    "lateral inhibition",
+    "decision making"
+  ],
+  "references": [
+    "Douglas & Martin (2004) Neuronal circuits of the neocortex. Annu. Rev. Neurosci.",
+    "Maass (2000) On the computational power of winner-take-all. Neural Computation."
+  ],
+  "network": {
+    "version": 1,
+    "name": "Winner-Take-All circuit",
+    "description": "Three excitatory groups receive stimuli of different strength and all excite one shared pool of inhibitory neurons, which inhibits every group in return. The group with the strongest input fires first, recruits inhibition and silences its competitors: the network computes an argmax with spikes.",
+    "biology": "Soft winner-take-all motifs built from recurrent excitation and pooled inhibition are found throughout neocortex (e.g. between orientation columns and in attention/decision circuits). They let a population select the most salient input and suppress the rest. Inhibitory basket cells provide the shared pool.",
+    "sim": {
+      "dt": 0.1,
+      "duration": 1000,
+      "seed": 7,
+      "record_per_population": 4,
+      "chunk_ms": 25
+    },
+    "populations": [
+      {
+        "id": "e_a",
+        "label": "Excitatory A",
+        "count": 30,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 320,
+          "y": 40
+        }
+      },
+      {
+        "id": "e_b",
+        "label": "Excitatory B",
+        "count": 30,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 320,
+          "y": 190
+        }
+      },
+      {
+        "id": "e_c",
+        "label": "Excitatory C",
+        "count": 30,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 320,
+          "y": 340
+        }
+      },
+      {
+        "id": "inh",
+        "label": "Shared inhibition",
+        "count": 30,
+        "model": "lif",
+        "params": {
+          "tau_m": 10,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 2,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 640,
+          "y": 190
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "id": "in_a",
+        "label": "Stimulus A (32 Hz)",
+        "count": 40,
+        "kind": "poisson",
+        "rate_hz": 32,
+        "start_ms": 0,
+        "stop_ms": null,
+        "position": {
+          "x": 0,
+          "y": 40
+        }
+      },
+      {
+        "id": "in_b",
+        "label": "Stimulus B (26 Hz)",
+        "count": 40,
+        "kind": "poisson",
+        "rate_hz": 26,
+        "start_ms": 0,
+        "stop_ms": null,
+        "position": {
+          "x": 0,
+          "y": 190
+        }
+      },
+      {
+        "id": "in_c",
+        "label": "Stimulus C (20 Hz)",
+        "count": 40,
+        "kind": "poisson",
+        "rate_hz": 20,
+        "start_ms": 0,
+        "stop_ms": null,
+        "position": {
+          "x": 0,
+          "y": 340
+        }
+      }
+    ],
+    "synapses": [
+      {
+        "id": "in_a_e",
+        "source": "in_a",
+        "target": "e_a",
+        "weight": 4.0,
+        "weight_std": 0,
+        "p_connect": 0.25,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_a_self",
+        "source": "e_a",
+        "target": "e_a",
+        "weight": 2.5,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.5,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_a_inh",
+        "source": "e_a",
+        "target": "inh",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "inh_e_a",
+        "source": "inh",
+        "target": "e_a",
+        "weight": -9.0,
+        "weight_std": 0,
+        "p_connect": 0.5,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "in_b_e",
+        "source": "in_b",
+        "target": "e_b",
+        "weight": 4.0,
+        "weight_std": 0,
+        "p_connect": 0.25,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_b_self",
+        "source": "e_b",
+        "target": "e_b",
+        "weight": 2.5,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.5,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_b_inh",
+        "source": "e_b",
+        "target": "inh",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "inh_e_b",
+        "source": "inh",
+        "target": "e_b",
+        "weight": -9.0,
+        "weight_std": 0,
+        "p_connect": 0.5,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "in_c_e",
+        "source": "in_c",
+        "target": "e_c",
+        "weight": 4.0,
+        "weight_std": 0,
+        "p_connect": 0.25,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_c_self",
+        "source": "e_c",
+        "target": "e_c",
+        "weight": 2.5,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.5,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "e_c_inh",
+        "source": "e_c",
+        "target": "inh",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "inh_e_c",
+        "source": "inh",
+        "target": "e_c",
+        "weight": -9.0,
+        "weight_std": 0,
+        "p_connect": 0.5,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      }
+    ]
+  }
+}

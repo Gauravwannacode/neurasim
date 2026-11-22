@@ -1,0 +1,401 @@
+{
+  "id": "v1-column",
+  "title": "Visual cortex V1 column",
+  "tags": [
+    "cortex",
+    "laminar",
+    "Izhikevich",
+    "feedforward"
+  ],
+  "references": [
+    "Douglas & Martin (1991, 2004) canonical microcircuit of neocortex.",
+    "Izhikevich (2003) Simple model of spiking neurons. IEEE Trans. Neural Networks.",
+    "Potjans & Diesmann (2014) The cell-type specific cortical microcircuit. Cereb. Cortex."
+  ],
+  "network": {
+    "version": 1,
+    "name": "Visual cortex V1 column",
+    "description": "A simplified cortical column with three layers, each with excitatory and fast-spiking inhibitory Izhikevich neurons. A burst of thalamic (LGN) input from 100–600 ms arrives in layer 4, is relayed to layers 2/3 and then to the bursting pyramidal cells of layer 5, the column's output. Watch activity sweep through the layers with a few ms delay each.",
+    "biology": "Primary visual cortex is organised into columns whose layers follow the 'canonical microcircuit' (Douglas & Martin): thalamus → L4 → L2/3 → L5/6, with local inhibition balancing excitation in every layer. Different cell types are captured by Izhikevich's model: regular-spiking (RS) and intrinsically-bursting (IB) pyramidal cells and fast-spiking (FS) basket cells.",
+    "sim": {
+      "dt": 0.1,
+      "duration": 800,
+      "seed": 1,
+      "record_per_population": 4,
+      "chunk_ms": 20
+    },
+    "populations": [
+      {
+        "id": "l23e",
+        "label": "L2/3 pyramidal (RS)",
+        "count": 120,
+        "model": "izhikevich",
+        "params": {
+          "v_th": 30,
+          "t_ref": 0,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 3.0,
+          "a": 0.02,
+          "b": 0.2,
+          "c": -65,
+          "d": 8
+        },
+        "position": {
+          "x": 360,
+          "y": 0
+        }
+      },
+      {
+        "id": "l23i",
+        "label": "L2/3 interneurons (FS)",
+        "count": 30,
+        "model": "izhikevich",
+        "params": {
+          "v_th": 30,
+          "t_ref": 0,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 2.0,
+          "a": 0.1,
+          "b": 0.2,
+          "c": -65,
+          "d": 2
+        },
+        "position": {
+          "x": 660,
+          "y": 0
+        }
+      },
+      {
+        "id": "l4e",
+        "label": "L4 spiny stellate (RS)",
+        "count": 120,
+        "model": "izhikevich",
+        "params": {
+          "v_th": 30,
+          "t_ref": 0,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 3.0,
+          "a": 0.02,
+          "b": 0.2,
+          "c": -65,
+          "d": 8
+        },
+        "position": {
+          "x": 360,
+          "y": 190
+        }
+      },
+      {
+        "id": "l4i",
+        "label": "L4 interneurons (FS)",
+        "count": 30,
+        "model": "izhikevich",
+        "params": {
+          "v_th": 30,
+          "t_ref": 0,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 2.0,
+          "a": 0.1,
+          "b": 0.2,
+          "c": -65,
+          "d": 2
+        },
+        "position": {
+          "x": 660,
+          "y": 190
+        }
+      },
+      {
+        "id": "l5e",
+        "label": "L5 pyramidal (IB)",
+        "count": 80,
+        "model": "izhikevich",
+        "params": {
+          "v_th": 30,
+          "t_ref": 0,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 3.0,
+          "a": 0.02,
+          "b": 0.2,
+          "c": -55,
+          "d": 4
+        },
+        "position": {
+          "x": 360,
+          "y": 380
+        }
+      },
+      {
+        "id": "l5i",
+        "label": "L5 interneurons (FS)",
+        "count": 20,
+        "model": "izhikevich",
+        "params": {
+          "v_th": 30,
+          "t_ref": 0,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 2.0,
+          "a": 0.1,
+          "b": 0.2,
+          "c": -65,
+          "d": 2
+        },
+        "position": {
+          "x": 660,
+          "y": 380
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "id": "lgn",
+        "label": "LGN (thalamic) input",
+        "count": 100,
+        "kind": "poisson",
+        "rate_hz": 25,
+        "start_ms": 100,
+        "stop_ms": 600,
+        "position": {
+          "x": 0,
+          "y": 190
+        }
+      }
+    ],
+    "synapses": [
+      {
+        "id": "lgn_l4e",
+        "source": "lgn",
+        "target": "l4e",
+        "weight": 7.0,
+        "weight_std": 0,
+        "p_connect": 0.15,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "lgn_l4i",
+        "source": "lgn",
+        "target": "l4i",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.15,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l4e_l4e",
+        "source": "l4e",
+        "target": "l4e",
+        "weight": 2.0,
+        "weight_std": 0,
+        "p_connect": 0.1,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l4e_l4i",
+        "source": "l4e",
+        "target": "l4i",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.15,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l4i_l4e",
+        "source": "l4i",
+        "target": "l4e",
+        "weight": -4.0,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l4e_l23e",
+        "source": "l4e",
+        "target": "l23e",
+        "weight": 4.0,
+        "weight_std": 0,
+        "p_connect": 0.12,
+        "delay_ms": 2.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l23e_l23e",
+        "source": "l23e",
+        "target": "l23e",
+        "weight": 1.0,
+        "weight_std": 0,
+        "p_connect": 0.1,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l23e_l23i",
+        "source": "l23e",
+        "target": "l23i",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.15,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l23i_l23e",
+        "source": "l23i",
+        "target": "l23e",
+        "weight": -5.0,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l23e_l5e",
+        "source": "l23e",
+        "target": "l5e",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.12,
+        "delay_ms": 2.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l5e_l5i",
+        "source": "l5e",
+        "target": "l5i",
+        "weight": 3.0,
+        "weight_std": 0,
+        "p_connect": 0.15,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      },
+      {
+        "id": "l5i_l5e",
+        "source": "l5i",
+        "target": "l5e",
+        "weight": -6.0,
+        "weight_std": 0,
+        "p_connect": 0.3,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "static",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.012,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 1
+        }
+      }
+    ]
+  }
+}

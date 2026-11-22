@@ -1,0 +1,302 @@
+{
+  "id": "stdp-learning",
+  "title": "STDP learning demo",
+  "tags": [
+    "plasticity",
+    "Hebbian learning",
+    "unsupervised"
+  ],
+  "references": [
+    "Bi & Poo (1998) Synaptic modifications in cultured hippocampal neurons. J. Neurosci.",
+    "Song, Miller & Abbott (2000) Competitive Hebbian learning through STDP. Nat. Neurosci.",
+    "Masquelier, Guyonneau & Thorpe (2008) Spike timing dependent plasticity finds the start of repeating patterns. PLoS ONE."
+  ],
+  "network": {
+    "version": 1,
+    "name": "STDP learning demo",
+    "description": "Ten output neurons receive two groups of afferents that fire at exactly the same average rate (20 Hz). One group fires in near-synchronous volleys every 50 ms; the other is random. Spike-timing dependent plasticity strengthens the synapses whose spikes reliably arrive just *before* the output fires, so the correlated synapses grow while the random ones weaken: the neuron learns which inputs belong together, without a teacher.",
+    "biology": "In real synapses, a presynaptic spike arriving a few ms before the postsynaptic spike causes long-term potentiation, and the reverse order causes depression (Bi & Poo 1998). This 'fire together, wire together' rule with a causal twist lets neurons detect repeating spatiotemporal patterns and is a leading candidate for unsupervised learning in cortex.",
+    "sim": {
+      "dt": 0.2,
+      "duration": 3000,
+      "seed": 5,
+      "record_per_population": 3,
+      "chunk_ms": 50
+    },
+    "populations": [
+      {
+        "id": "out",
+        "label": "Output neurons",
+        "count": 10,
+        "model": "lif",
+        "params": {
+          "tau_m": 20,
+          "v_rest": -65,
+          "v_reset": -70,
+          "v_th": -50,
+          "t_ref": 5,
+          "tau_syn": 5,
+          "bias": 0,
+          "noise": 0,
+          "adapt_b": 0,
+          "tau_w": 100
+        },
+        "position": {
+          "x": 420,
+          "y": 150
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "id": "corr",
+        "label": "Correlated volleys (20 Hz)",
+        "count": 60,
+        "kind": "pattern",
+        "rate_hz": 20,
+        "start_ms": 0,
+        "stop_ms": null,
+        "position": {
+          "x": 0,
+          "y": 40
+        },
+        "pattern": [
+          [
+            22.4
+          ],
+          [
+            22.4
+          ],
+          [
+            21.5
+          ],
+          [
+            20.9
+          ],
+          [
+            20.2
+          ],
+          [
+            21.2
+          ],
+          [
+            21.2
+          ],
+          [
+            20.1
+          ],
+          [
+            20.1
+          ],
+          [
+            23.0
+          ],
+          [
+            22.0
+          ],
+          [
+            20.7
+          ],
+          [
+            21.3
+          ],
+          [
+            22.9
+          ],
+          [
+            22.7
+          ],
+          [
+            22.5
+          ],
+          [
+            21.2
+          ],
+          [
+            21.5
+          ],
+          [
+            22.0
+          ],
+          [
+            20.2
+          ],
+          [
+            21.7
+          ],
+          [
+            20.8
+          ],
+          [
+            22.6
+          ],
+          [
+            20.2
+          ],
+          [
+            22.0
+          ],
+          [
+            22.6
+          ],
+          [
+            20.7
+          ],
+          [
+            22.7
+          ],
+          [
+            22.6
+          ],
+          [
+            20.1
+          ],
+          [
+            22.1
+          ],
+          [
+            20.0
+          ],
+          [
+            21.5
+          ],
+          [
+            21.3
+          ],
+          [
+            20.6
+          ],
+          [
+            21.0
+          ],
+          [
+            22.4
+          ],
+          [
+            20.9
+          ],
+          [
+            20.4
+          ],
+          [
+            22.1
+          ],
+          [
+            21.3
+          ],
+          [
+            22.4
+          ],
+          [
+            20.7
+          ],
+          [
+            21.0
+          ],
+          [
+            22.4
+          ],
+          [
+            21.5
+          ],
+          [
+            21.5
+          ],
+          [
+            20.7
+          ],
+          [
+            20.0
+          ],
+          [
+            22.8
+          ],
+          [
+            20.3
+          ],
+          [
+            22.5
+          ],
+          [
+            21.1
+          ],
+          [
+            22.9
+          ],
+          [
+            21.2
+          ],
+          [
+            22.8
+          ],
+          [
+            21.7
+          ],
+          [
+            20.7
+          ],
+          [
+            22.2
+          ],
+          [
+            22.0
+          ]
+        ],
+        "period_ms": 50
+      },
+      {
+        "id": "rand",
+        "label": "Random Poisson (20 Hz)",
+        "count": 60,
+        "kind": "poisson",
+        "rate_hz": 20,
+        "start_ms": 0,
+        "stop_ms": null,
+        "position": {
+          "x": 0,
+          "y": 260
+        }
+      }
+    ],
+    "synapses": [
+      {
+        "id": "corr_out",
+        "source": "corr",
+        "target": "out",
+        "weight": 1.2,
+        "weight_std": 0.4,
+        "p_connect": 1.0,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "stdp",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.0105,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 3
+        }
+      },
+      {
+        "id": "rand_out",
+        "source": "rand",
+        "target": "out",
+        "weight": 1.2,
+        "weight_std": 0.4,
+        "p_connect": 1.0,
+        "delay_ms": 1.0,
+        "allow_autapses": false,
+        "plasticity": "stdp",
+        "stdp": {
+          "A_plus": 0.01,
+          "A_minus": 0.0105,
+          "tau_plus": 20,
+          "tau_minus": 20,
+          "w_min": 0,
+          "w_max": 3
+        }
+      }
+    ]
+  }
+}

@@ -203,10 +203,10 @@ export function starterNetwork(): Network {
     populations: [exc, inh],
     inputs: [input],
     synapses: [
-      { ...makeSynapse("input", "exc", 3), id: "in_exc", p_connect: 0.1 },
-      { ...makeSynapse("input", "inh", 3), id: "in_inh", p_connect: 0.1 },
+      { ...makeSynapse("input", "exc", 5), id: "in_exc", p_connect: 0.1 },
+      { ...makeSynapse("input", "inh", 5), id: "in_inh", p_connect: 0.1 },
       { ...makeSynapse("exc", "inh", 2), id: "exc_inh", p_connect: 0.2 },
-      { ...makeSynapse("inh", "exc", -6), id: "inh_exc", p_connect: 0.3 },
+      { ...makeSynapse("inh", "exc", -4), id: "inh_exc", p_connect: 0.3 },
       { ...makeSynapse("exc", "exc", 1), id: "exc_exc", p_connect: 0.1, delay_ms: 2 },
     ],
   };

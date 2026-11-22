@@ -89,7 +89,7 @@ class Simulator:
         self.syn_decay = {pid: np.exp(-self.dt / net.populations[i].params.tau_syn) for i, pid in enumerate(self.pops)}
         self.pop_params = {p.id: p.params for p in net.populations}
         # LIF weights are scaled by tau_m / tau_syn so that a weight of w produces a
-        # post-synaptic potential of roughly w mV (more precisely ~0.6·w for the
+        # post-synaptic potential of roughly w mV (more precisely ~0.6*w for the
         # default 20 ms / 5 ms time constants). Izhikevich and HH weights are the
         # peak synaptic current in the model's native units.
         self.syn_scale = {

@@ -5,6 +5,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
+from fastapi import Depends
+
+from .auth import User, current_user
 from .config import settings
 
 app = FastAPI(title="NeuraSim API", version=__version__, description="Spiking Neural Network simulator backend")
@@ -22,3 +25,8 @@ app.add_middleware(
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "version": __version__, "auth": settings.auth_enabled}
+
+
+@app.get("/me")
+def me(user: User = Depends(current_user)) -> dict:
+    return {"id": user.id, "email": user.email, "name": user.name, "guest": user.guest}

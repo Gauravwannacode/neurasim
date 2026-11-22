@@ -1,5 +1,7 @@
 import { ReactFlowProvider } from "@xyflow/react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSimStore } from "../lib/simStore";
 import NetworkCanvas from "../components/builder/NetworkCanvas";
 import Inspector from "../components/builder/Inspector";
 import { useNetworkStore } from "../lib/store";
@@ -58,6 +60,15 @@ export default function Builder() {
   const network = useNetworkStore((s) => s.network);
   const setNetwork = useNetworkStore((s) => s.setNetwork);
   const empty = network.populations.length === 0;
+  // Overlay results of the latest run on the canvas (node glow = firing rate, edge label = learned weight).
+  const summary = useSimStore((s) => s.summary);
+  const weightMeans = useSimStore((s) => s.weightMeans);
+  const learned = useMemo(() => {
+    if (!summary) return undefined;
+    const out: Record<string, number> = {};
+    for (const [id, series] of Object.entries(weightMeans)) if (series.length) out[id] = series[series.length - 1];
+    return out;
+  }, [summary, weightMeans]);
 
   return (
     <div className="flex h-full flex-col">
@@ -80,7 +91,7 @@ export default function Builder() {
         <Palette />
         <div className="min-w-0 flex-1">
           <ReactFlowProvider>
-            <NetworkCanvas />
+            <NetworkCanvas rates={summary?.mean_rates} learnedWeights={learned} />
           </ReactFlowProvider>
         </div>
         <Inspector />

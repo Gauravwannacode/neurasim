@@ -2,9 +2,10 @@
  * Network definition schema shared by the builder, presets, export/import and
  * the backend simulator (mirrored by backend/app/schemas.py).
  *
- * Units: time in ms, voltage in mV. Synaptic weights are expressed in the
- * input-current units of the *target* neuron model (mV for LIF, Izhikevich's
- * dimensionless I, µA/cm² for Hodgkin-Huxley); negative weights are inhibitory.
+ * Units: time in ms, voltage in mV. Synaptic weights depend on the *target*
+ * model: for LIF a weight w gives a post-synaptic potential of roughly w mV;
+ * for Izhikevich (dimensionless I) and Hodgkin-Huxley (µA/cm²) it is the peak
+ * synaptic current. Negative weights are inhibitory.
  */
 import { z } from "zod";
 

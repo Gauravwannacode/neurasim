@@ -1,8 +1,10 @@
 """Pydantic models for the network definition JSON.
 
 Mirrors ``frontend/src/lib/network.ts``. Units: time in ms, voltage in mV.
-Synaptic weights are in the input-current units of the *target* neuron model
-(mV for LIF, dimensionless I for Izhikevich, µA/cm² for Hodgkin-Huxley).
+Synaptic weights depend on the *target* model: for LIF a weight of w produces
+a PSP of roughly w mV (the simulator scales the current jump by tau_m/tau_syn);
+for Izhikevich (dimensionless I) and Hodgkin-Huxley (µA/cm²) it is the peak
+synaptic current.
 """
 from __future__ import annotations
 

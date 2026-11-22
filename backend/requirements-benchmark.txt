@@ -1,0 +1,5 @@
+# Optional: needed only to (re)train the MNIST benchmark.
+# CPU wheels: pip install -r requirements-benchmark.txt --extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.4
+torchvision>=0.19
+norse>=1.1

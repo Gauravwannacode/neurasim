@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useSimStore } from "../lib/simStore";
 import NetworkCanvas from "../components/builder/NetworkCanvas";
 import Inspector from "../components/builder/Inspector";
+import { NetworkJsonButtons } from "../components/export/ExportButtons";
 import { useNetworkStore } from "../lib/store";
 import {
   INPUT_KINDS,
@@ -74,7 +75,9 @@ export default function Builder() {
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-ink-700 bg-ink-900/60 px-4 py-2">
         <h2 className="mr-2 truncate font-semibold">{network.name}</h2>
-        <div id="builder-toolbar-slot" className="flex items-center gap-2" />
+        <div className="flex items-center gap-2">
+          <NetworkJsonButtons />
+        </div>
         <div className="ml-auto flex items-center gap-2">
           <button
             className="btn-ghost"

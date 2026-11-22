@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import __version__
 from .auth import User, current_user
 from .config import settings
-from .routers import benchmark, presets, simulate
+from .routers import benchmark, export, presets, simulate
 
 app = FastAPI(title="NeuraSim API", version=__version__, description="Spiking Neural Network simulator backend")
 
@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(simulate.router)
 app.include_router(benchmark.router)
 app.include_router(presets.router)
+app.include_router(export.router)
 
 
 @app.get("/health")

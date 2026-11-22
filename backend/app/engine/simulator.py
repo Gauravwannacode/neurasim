@@ -134,6 +134,10 @@ class Simulator:
             "v_stride": self.v_stride,
         }
 
+        # Spikes of recorded neurons since the last voltage sample, so that downsampled
+        # traces never drop a spike.
+        latch = {pid: np.zeros(len(idx), dtype=bool) for pid, idx in self.recorded.items()}
+
         for c0 in range(0, self.steps, chunk_steps):
             c1 = min(self.steps, c0 + chunk_steps)
             chunk_spikes_t: list[np.ndarray] = []
@@ -184,15 +188,18 @@ class Simulator:
                             total_spikes += ids.size
                         else:
                             truncated = True
+                for pid, idx in self.recorded.items():
+                    latch[pid] |= last[pid][idx]
                 if step % self.v_stride == 0:
                     v_times.append(round(t_ms, 4))
                     for pid, idx in self.recorded.items():
-                        v = self.pops[pid].v
-                        # Show emitted spikes as a full-height spike for integrate-and-fire models.
-                        vals = v[idx].copy()
-                        fired = last[pid][idx]
+                        vals = self.pops[pid].v[idx].copy()
+                        # Draw emitted spikes as a full-height spike for reset-based models
+                        # (Hodgkin-Huxley produces real action potentials).
+                        fired = latch[pid]
                         if fired.any() and self.groups[pid].model != "hh":
                             vals[fired] = max(self.pop_params[pid].v_th, 20.0)
+                        fired[:] = False
                         v_traces[pid].append(np.round(vals, 3).tolist())
 
             total_synops += chunk_synops

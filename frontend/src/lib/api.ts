@@ -21,20 +21,30 @@ async function errorMessage(res: Response): Promise<string> {
   return `${res.status} ${res.statusText}`;
 }
 
+/** fetch() that turns network failures into an actionable message. */
+async function call(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (e) {
+    if ((e as Error).name === "AbortError") throw e;
+    throw new Error(`Cannot reach the NeuraSim server at ${API_URL}. Is the backend running?`);
+  }
+}
+
 export async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { headers: headers() });
+  const res = await call(`${API_URL}${path}`, { headers: headers() });
   if (!res.ok) throw new Error(await errorMessage(res));
   return res.json();
 }
 
 export async function postJSON<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  const res = await call(`${API_URL}${path}`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
   if (!res.ok) throw new Error(await errorMessage(res));
   return res.json();
 }
 
 export async function postForBlob(path: string, body: unknown): Promise<Blob> {
-  const res = await fetch(`${API_URL}${path}`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  const res = await call(`${API_URL}${path}`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
   if (!res.ok) throw new Error(await errorMessage(res));
   return res.blob();
 }
@@ -54,7 +64,7 @@ export async function postSSE(
   onMessage: (m: SSEMessage) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await call(`${API_URL}${path}`, {
     method: "POST",
     headers: headers({ Accept: "text/event-stream" }),
     body: JSON.stringify(body),

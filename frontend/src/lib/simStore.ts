@@ -190,11 +190,7 @@ export const useSimStore = create<SimState>((set, get) => ({
       if (get().status === "running") set({ status: "error", error: "Stream ended before the simulation finished." });
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
-      const msg = (e as Error).message;
-      set({
-        status: "error",
-        error: msg === "Failed to fetch" ? "Cannot reach the simulation server. Is the backend running?" : msg,
-      });
+      set({ status: "error", error: (e as Error).message });
     } finally {
       if (controller === ctrl) controller = null;
     }

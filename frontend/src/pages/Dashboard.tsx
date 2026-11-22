@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useNetworkStore } from "../lib/store";
 import { useSimStore } from "../lib/simStore";
+import { RunExportButtons } from "../components/export/ExportButtons";
 import { ActivityHeatmap, EnergyCompare, SpikeRaster, Stat, VoltageTrace, WeightEvolution } from "../components/viz/charts";
 
 function Card({ title, subtitle, children, className }: { title: string; subtitle?: string; children: ReactNode; className?: string }) {
@@ -70,7 +71,7 @@ export default function Dashboard() {
               ▶ {status === "idle" ? "Run" : "Re-run"}
             </button>
           )}
-          <div id="dashboard-export-slot" className="flex items-center gap-2" />
+          <RunExportButtons />
         </div>
         <div className="h-1 w-full overflow-hidden rounded bg-ink-700">
           <div

@@ -14,7 +14,7 @@ async function errorMessage(res: Response): Promise<string> {
   try {
     const body = await res.json();
     if (typeof body.detail === "string") return body.detail;
-    if (Array.isArray(body.detail)) return body.detail.map((d: { msg: string }) => d.msg).join("; ");
+    if (Array.isArray(body.detail)) return body.detail.map((d: { loc?: (string | number)[]; msg: string }) => `${(d.loc ?? []).slice(1).join(".")} ${d.msg}`.trim()).join("; ");
   } catch {
     /* not JSON */
   }

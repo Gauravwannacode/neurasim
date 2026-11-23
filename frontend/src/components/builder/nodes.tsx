@@ -11,7 +11,7 @@ export type PopulationNodeData = {
 };
 export type InputNodeData = { label: string; count: number; kind: InputKind; rateHz: number };
 export type PopulationFlowNode = Node<PopulationNodeData, "population">;
-export type InputFlowNode = Node<InputNodeData, "input">;
+export type InputFlowNode = Node<InputNodeData, "spikeInput">;
 
 /** A tiny "spike train" glyph whose density hints at the population's activity. */
 function SpikeGlyph({ color, density }: { color: string; density: number }) {
@@ -77,4 +77,4 @@ export const InputNode = memo(function InputNode({ data, selected }: NodeProps<I
   );
 });
 
-export const nodeTypes = { population: PopulationNode, input: InputNode };
+export const nodeTypes = { population: PopulationNode, spikeInput: InputNode };

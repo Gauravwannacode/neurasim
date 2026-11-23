@@ -14,6 +14,7 @@ import {
   NEURON_MODELS,
   makeInput,
   makePopulation,
+  simulationKey,
   starterNetwork,
 } from "../lib/network";
 
@@ -62,7 +63,10 @@ export default function Builder() {
   const setNetwork = useNetworkStore((s) => s.setNetwork);
   const empty = network.populations.length === 0;
   // Overlay results of the latest run on the canvas (node glow = firing rate, edge label = learned weight).
-  const summary = useSimStore((s) => s.summary);
+  const lastSummary = useSimStore((s) => s.summary);
+  const runNetwork = useSimStore((s) => s.network);
+  const fresh = useMemo(() => runNetwork !== null && simulationKey(runNetwork) === simulationKey(network), [runNetwork, network]);
+  const summary = fresh ? lastSummary : null;
   const weightMeans = useSimStore((s) => s.weightMeans);
   const learned = useMemo(() => {
     if (!summary) return undefined;

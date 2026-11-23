@@ -3,10 +3,6 @@ import type { Data } from "plotly.js";
 import Plot, { GROUP_PALETTE, baseLayout } from "./Plot";
 import { useSimStore } from "../../lib/simStore";
 
-export function groupColor(index: number, kind: string) {
-  return kind === "input" ? "#facc15" : GROUP_PALETTE[(index % (GROUP_PALETTE.length - 1)) + 1];
-}
-
 function useGroupColors() {
   const meta = useSimStore((s) => s.meta);
   return useMemo(() => {
@@ -311,14 +307,14 @@ export function EnergyCompare() {
       <div className="grid grid-cols-3 gap-2 text-center">
         <Stat label="SNN SynOps" value={fmt(live.snn_synops)} sub={`× ${live.e_ac_pj} pJ`} color="text-sky-300" />
         <Stat label="ANN MACs" value={fmt(live.ann_macs)} sub={`× ${live.e_mac_pj} pJ`} color="text-slate-300" />
-        <Stat label="Efficiency" value={ratio ? `${ratio.toFixed(1)}×` : "–"} sub="less energy" color="text-emerald-300" />
+        <Stat label="Efficiency" value={ratio ? `${ratio.toFixed(1)}×` : "–"} sub="less than dense ANN" color="text-emerald-300" />
       </div>
       <div className="min-h-0 flex-1">
         <Plot data={data} layout={layout} />
       </div>
       <p className="text-[11px] leading-snug text-slate-500">
         The SNN only does work when a spike arrives (an accumulate per synapse); an equivalent ANN multiplies every one of the{" "}
-        {fmt(meta?.n_connections ?? 0)} connections every 1 ms frame. Energies per op: Horowitz (2014), 45 nm, 32-bit float.
+        {fmt(meta?.n_connections ?? 0)} connections every 1 ms frame. Energies per op: Horowitz (2014), 45 nm, 32-bit float. Neuron updates and memory access are not counted, and an ANN that skips zeros would close much of the gap, so read this as an upper bound.
       </p>
     </div>
   );

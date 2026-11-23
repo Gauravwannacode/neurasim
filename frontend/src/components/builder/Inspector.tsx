@@ -138,11 +138,11 @@ function InputPanel({ input }: { input: InputSource }) {
           <NumberField label="Max rate" unit="Hz" min={0} value={input.rate_max_hz} onChange={(rate_max_hz) => update(input.id, { rate_max_hz })} hint="Rates are spread linearly across neurons: a rate code." />
         )}
         <NumberField label="Start" unit="ms" min={0} value={input.start_ms} onChange={(start_ms) => update(input.id, { start_ms })} />
-        <NumberField label="Stop" unit="ms" min={0} value={input.stop_ms ?? undefined} onChange={(stop_ms) => update(input.id, { stop_ms })} hint="Leave empty to run until the end." />
+        <NumberField label="Stop" unit="ms" min={0} value={input.stop_ms ?? undefined} onChange={(stop_ms) => update(input.id, { stop_ms })} onClear={() => update(input.id, { stop_ms: null })} hint="Leave empty to run until the end." />
       </Section>
       {input.kind === "pattern" && (
         <Section title="Custom pattern">
-          <NumberField label="Repeat period" unit="ms" min={1} value={input.period_ms ?? undefined} onChange={(period_ms) => update(input.id, { period_ms })} />
+          <NumberField label="Repeat period" unit="ms" min={1} value={input.period_ms ?? undefined} onChange={(period_ms) => update(input.id, { period_ms })} onClear={() => update(input.id, { period_ms: null })} />
           <div className="flex items-end">
             <button className="btn-ghost w-full justify-center" onClick={() => fileRef.current?.click()}>
               Upload CSV / JSON
@@ -264,13 +264,13 @@ export default function Inspector() {
   let body = <NetworkPanel />;
   if (selection?.kind === "population") {
     const pop = network.populations.find((p) => p.id === selection.id);
-    if (pop) body = <PopulationPanel pop={pop} />;
+    if (pop) body = <PopulationPanel key={pop.id} pop={pop} />;
   } else if (selection?.kind === "input") {
     const input = network.inputs.find((i) => i.id === selection.id);
-    if (input) body = <InputPanel input={input} />;
+    if (input) body = <InputPanel key={input.id} input={input} />;
   } else if (selection?.kind === "synapse") {
     const syn = network.synapses.find((x) => x.id === selection.id);
-    if (syn) body = <SynapsePanel syn={syn} />;
+    if (syn) body = <SynapsePanel key={syn.id} syn={syn} />;
   }
 
   return (

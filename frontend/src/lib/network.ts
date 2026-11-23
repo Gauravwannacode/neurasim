@@ -231,6 +231,12 @@ export function parseNetwork(raw: unknown): Network {
   return net;
 }
 
+/** Canonical form of everything that affects a simulation (labels, text and layout do not). */
+export function simulationKey(net: Network): string {
+  const strip = <T extends { position: unknown; label: string }>({ position: _p, label: _l, ...rest }: T) => rest;
+  return JSON.stringify([net.sim, net.populations.map(strip), net.inputs.map(strip), net.synapses]);
+}
+
 export function nodeModel(net: Network, id: string): NeuronModel | "input" | undefined {
   if (net.inputs.some((i) => i.id === id)) return "input";
   return net.populations.find((p) => p.id === id)?.model;

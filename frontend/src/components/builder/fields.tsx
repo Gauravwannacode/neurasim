@@ -25,6 +25,7 @@ export function NumberField({
   max,
   hint,
   unit,
+  onClear,
 }: {
   label: string;
   value: number | undefined | null;
@@ -34,10 +35,13 @@ export function NumberField({
   max?: number;
   hint?: string;
   unit?: string;
+  /** If given, emptying the field is allowed and calls this. */
+  onClear?: () => void;
 }) {
   const [draft, setDraft] = useState(value === undefined || value === null ? "" : String(value));
   useEffect(() => {
-    if (value !== undefined && value !== null && Number(draft) !== value) setDraft(String(value));
+    if (value === undefined || value === null) setDraft("");
+    else if (draft === "" || Number(draft) !== value) setDraft(String(value));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
@@ -53,6 +57,7 @@ export function NumberField({
         value={draft}
         onChange={(e) => {
           setDraft(e.target.value);
+          if (e.target.value.trim() === "" && e.target.validity.valid) onClear?.();
           const v = Number(e.target.value);
           if (e.target.value.trim() !== "" && Number.isFinite(v)) {
             const clamped = Math.min(max ?? Infinity, Math.max(min ?? -Infinity, v));

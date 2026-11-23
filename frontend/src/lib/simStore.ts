@@ -183,6 +183,7 @@ export const useSimStore = create<SimState>((set, get) => ({
           const data = JSON.parse(m.data);
           if (m.event === "meta") onMeta(data);
           else if (m.event === "chunk") onChunk(data);
+          else if (m.event === "error") set({ status: "error", error: data.message });
           else if (m.event === "done") set({ summary: data, status: "done", progress: 1, version: get().version + 1 });
         },
         ctrl.signal,

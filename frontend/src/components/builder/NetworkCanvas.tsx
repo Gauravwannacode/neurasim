@@ -33,7 +33,7 @@ function toNodes(net: Network, rates: Record<string, number> | undefined, previo
   return [
     ...net.inputs.map((i) => ({
       id: i.id,
-      type: "input",
+      type: "spikeInput", // not "input": React Flow styles that built-in type
       position: i.position,
       data: { label: i.label, count: i.count, kind: i.kind, rateHz: i.rate_hz },
       ...keep(i.id),
@@ -54,15 +54,16 @@ export default function NetworkCanvas({ rates, learnedWeights }: Props) {
   const selection = useNetworkStore((s) => s.selection);
   const { select, moveNode, removeNode, removeSynapse, addSynapse } = useNetworkStore.getState();
   const { fitView } = useReactFlow();
+  const nodeCount = network.populations.length + network.inputs.length;
 
   // Nodes are kept locally so React Flow can track drag positions and measured sizes;
   // they are rebuilt from the store whenever the network changes.
   const [nodes, setNodes] = useState<Node[]>(() => toNodes(network, rates, []));
   useEffect(() => setNodes((prev) => toNodes(network, rates, prev)), [network, rates]);
   useEffect(() => {
-    const t = setTimeout(() => fitView({ padding: 0.25, duration: 300 }), 50);
+    const t = setTimeout(() => fitView({ padding: 0.25, duration: 300, maxZoom: 1.2 }), 100);
     return () => clearTimeout(t);
-  }, [revision, fitView]);
+  }, [revision, nodeCount, fitView]);
 
   const edges: SynapseFlowEdge[] = useMemo(
     () =>
@@ -146,7 +147,7 @@ export default function NetworkCanvas({ rates, learnedWeights }: Props) {
           pannable
           zoomable
           className="!bg-ink-900"
-          nodeColor={(n) => (n.type === "input" ? "#facc15" : MODEL_COLORS[(n.data as { model: keyof typeof MODEL_COLORS }).model])}
+          nodeColor={(n) => (n.type === "spikeInput" ? "#facc15" : MODEL_COLORS[(n.data as { model: keyof typeof MODEL_COLORS }).model])}
         />
       </ReactFlow>
     </div>

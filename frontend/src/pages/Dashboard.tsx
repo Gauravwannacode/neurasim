@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { simulationKey } from "../lib/network";
 import { useNetworkStore } from "../lib/store";
 import { useSimStore } from "../lib/simStore";
 import { RunExportButtons } from "../components/export/ExportButtons";
@@ -44,7 +45,7 @@ export default function Dashboard() {
 
   const running = status === "running";
   const pops = meta?.groups.filter((g) => g.kind === "population") ?? [];
-  const stale = runNetwork && JSON.stringify(runNetwork) !== JSON.stringify(network);
+  const stale = runNetwork && simulationKey(runNetwork) !== simulationKey(network);
 
   return (
     <div className="flex h-full flex-col">

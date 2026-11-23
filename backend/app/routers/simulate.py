@@ -16,20 +16,31 @@ from ..schemas import Network
 router = APIRouter(prefix="/simulate", tags=["simulation"])
 
 _SENTINEL = object()
+# Further requests queue here, so simultaneous runs cannot exhaust server memory.
+slots = asyncio.Semaphore(settings.max_concurrent)
 
 
-def _build(net: Network) -> Simulator:
-    try:
-        return Simulator(net, max_neurons=settings.max_neurons, max_steps=settings.max_steps)
-    except SimulationError as exc:
-        raise HTTPException(422, str(exc)) from exc
+def limits() -> dict:
+    return {
+        "max_neurons": settings.max_neurons,
+        "max_steps": settings.max_steps,
+        "max_synapses": settings.max_synapses,
+    }
+
+
+async def run_limited(net: Network) -> dict:
+    """Run to completion off the event loop, mapping simulator errors to HTTP 422."""
+    async with slots:
+        try:
+            return await run_in_threadpool(run, net, **limits())
+        except SimulationError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
 
 @router.post("")
 async def simulate(net: Network, _user: User = Depends(current_user)) -> dict:
     """Run the whole simulation and return all recorded data at once."""
-    _build(net)  # validate limits early with a 422
-    return await run_in_threadpool(run, net, max_neurons=settings.max_neurons, max_steps=settings.max_steps)
+    return await run_limited(net)
 
 
 @router.post("/stream")
@@ -39,19 +50,21 @@ async def simulate_stream(
     pace_ms: int = Query(0, ge=0, le=500, description="Minimum wall-clock delay between chunks, for live playback"),
     _user: User = Depends(current_user),
 ):
-    """Stream ``meta``, ``chunk`` and ``done`` events as the simulation runs."""
-    sim = _build(net)
-    events = sim.run_iter()
+    """Stream ``meta``, ``chunk`` and ``done`` events (or ``error``) as the simulation runs."""
 
     async def gen():
-        while True:
-            if await request.is_disconnected():
-                break
-            ev = await run_in_threadpool(next, events, _SENTINEL)
-            if ev is _SENTINEL:
-                break
-            yield {"event": ev["type"], "data": json.dumps(ev, separators=(",", ":"))}
-            if pace_ms and ev["type"] == "chunk":
-                await asyncio.sleep(pace_ms / 1000)
+        async with slots:
+            try:
+                sim = await run_in_threadpool(Simulator, net, **limits())
+                events = sim.run_iter()
+                while not await request.is_disconnected():
+                    ev = await run_in_threadpool(next, events, _SENTINEL)
+                    if ev is _SENTINEL:
+                        break
+                    yield {"event": ev["type"], "data": json.dumps(ev, separators=(",", ":"), allow_nan=False)}
+                    if pace_ms and ev["type"] == "chunk":
+                        await asyncio.sleep(pace_ms / 1000)
+            except SimulationError as exc:
+                yield {"event": "error", "data": json.dumps({"message": str(exc)})}
 
     return EventSourceResponse(gen(), ping=15)

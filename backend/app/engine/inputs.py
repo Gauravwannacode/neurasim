@@ -16,6 +16,9 @@ import numpy as np
 from ..schemas import InputSource
 
 
+MAX_SCHEDULED_SPIKES = 2_000_000
+
+
 class InputGroup:
     def __init__(self, spec: InputSource, dt: float, duration: float, rng: np.random.Generator):
         self.spec = spec
@@ -37,12 +40,16 @@ class InputGroup:
         sched: dict[int, list[int]] = defaultdict(list)
         pattern = (spec.pattern or [])[: self.n]
         period = spec.period_ms
+        total = 0
         for i, times in enumerate(pattern):
             for t in times:
                 repeats = int(duration // period) + 1 if period else 1
                 for k in range(repeats):
                     tt = t + k * (period or 0) + spec.start_ms
                     if tt < duration:
+                        total += 1
+                        if total > MAX_SCHEDULED_SPIKES:
+                            raise ValueError(f"input {spec.id!r}: pattern expands to too many spikes")
                         sched[int(round(tt / dt))].append(i)
         return {k: np.array(v, dtype=int) for k, v in sched.items()}
 

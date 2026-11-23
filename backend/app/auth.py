@@ -43,18 +43,20 @@ def _jwks_client() -> jwt.PyJWKClient | None:
 
 def verify_token(token: str) -> User:
     """Decode and verify a Supabase access token, raising ``jwt.PyJWTError`` on failure."""
-    header = jwt.get_unverified_header(token)
-    alg = header.get("alg", "HS256")
+    # The header only selects which configured key to use; accepted algorithms are pinned.
+    alg = jwt.get_unverified_header(token).get("alg")
     if alg == "HS256":
         if not settings.supabase_jwt_secret:
             raise jwt.InvalidTokenError("HS256 token but SUPABASE_JWT_SECRET is not set")
         claims = jwt.decode(token, settings.supabase_jwt_secret, algorithms=["HS256"], audience="authenticated")
-    else:
+    elif alg in ("RS256", "ES256"):
         client = _jwks_client()
         if client is None:
             raise jwt.InvalidTokenError("Asymmetric token but SUPABASE_URL is not set")
         key = client.get_signing_key_from_jwt(token).key
         claims = jwt.decode(token, key, algorithms=[alg], audience="authenticated")
+    else:
+        raise jwt.InvalidTokenError(f"Unsupported algorithm {alg!r}")
     meta = claims.get("user_metadata") or {}
     return User(
         id=str(claims["sub"]),
@@ -70,6 +72,8 @@ def current_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer)) 
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sign in required")
         return GUEST
     if not settings.auth_enabled:
+        if settings.require_auth:  # misconfigured server: fail closed
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sign-in is required but not configured on the server")
         return GUEST
     try:
         return verify_token(creds.credentials)

@@ -17,6 +17,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from ..auth import User, current_user
 from ..benchmark import mnist
+from ..config import settings
 
 router = APIRouter(prefix="/benchmark", tags=["benchmark"])
 
@@ -52,7 +53,9 @@ def get_results() -> dict:
 
 
 @router.post("/run")
-async def run(req: RunRequest, _user: User = Depends(current_user)):
+async def run(req: RunRequest, user: User = Depends(current_user)):
+    if settings.auth_enabled and user.guest:
+        raise HTTPException(403, "Sign in to retrain the benchmark.")
     if not mnist.torch_available():
         raise HTTPException(501, "PyTorch is not installed on this server; install requirements-benchmark.txt to retrain.")
     with job.lock:

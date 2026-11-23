@@ -29,7 +29,7 @@ from .neurons import MODELS, NeuronGroup
 from .synapses import Projection
 
 MAX_SPIKES = 2_000_000
-MAX_SYNAPSE_ENTRIES = 30_000_000
+MAX_BUFFER_CELLS = 50_000_000
 MAX_TRACE_POINTS = 2_000
 WEIGHT_SAMPLE = 12
 
@@ -49,7 +49,9 @@ class GroupInfo:
 
 
 class Simulator:
-    def __init__(self, net: Network, max_neurons: int = 5000, max_steps: int = 20000):
+    def __init__(
+        self, net: Network, max_neurons: int = 5000, max_steps: int = 20000, max_synapses: int = 4_000_000
+    ):
         self.net = net
         sim = net.sim
         self.dt = sim.dt
@@ -69,7 +71,10 @@ class Simulator:
         self.pops: dict[str, NeuronGroup] = {}
         offset = 0
         for spec in net.inputs:
-            self.inputs[spec.id] = InputGroup(spec, self.dt, sim.duration, self.rng)
+            try:
+                self.inputs[spec.id] = InputGroup(spec, self.dt, sim.duration, self.rng)
+            except ValueError as exc:
+                raise SimulationError(str(exc)) from exc
             self.groups[spec.id] = GroupInfo(spec.id, spec.label or spec.id, "input", None, offset, spec.count)
             offset += spec.count
         for spec in net.populations:
@@ -79,8 +84,14 @@ class Simulator:
         self.n_total = offset
 
         entries = sum(self.groups[s.source].count * self.groups[s.target].count for s in net.synapses)
-        if entries > MAX_SYNAPSE_ENTRIES:
-            raise SimulationError("Too many potential synapses; reduce population sizes.")
+        if entries > max_synapses:
+            raise SimulationError(
+                f"{entries:,} potential synapses (source size x target size, summed over projections); "
+                f"the limit is {max_synapses:,}. Reduce population sizes."
+            )
+        buffer_cells = sum(max(1, round(s.delay_ms / self.dt)) * self.groups[s.source].count for s in net.synapses)
+        if buffer_cells > MAX_BUFFER_CELLS:
+            raise SimulationError("Transmission delays need too much memory; use shorter delays or a larger dt.")
         self.projections = [
             Projection(s, self.groups[s.source].count, self.groups[s.target].count, self.dt, self.rng, s.source == s.target)
             for s in net.synapses
@@ -193,6 +204,11 @@ class Simulator:
                 if step % self.v_stride == 0:
                     v_times.append(round(t_ms, 4))
                     for pid, idx in self.recorded.items():
+                        if not np.isfinite(self.pops[pid].v).all():
+                            raise SimulationError(
+                                f"Numerical instability in '{self.groups[pid].label}' at t = {t_ms:.1f} ms. "
+                                "Use a smaller dt or smaller weights and bias."
+                            )
                         vals = self.pops[pid].v[idx].copy()
                         # Draw emitted spikes as a full-height spike for reset-based models
                         # (Hodgkin-Huxley produces real action potentials).

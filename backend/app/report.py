@@ -8,12 +8,14 @@ from __future__ import annotations
 import csv
 import io
 from datetime import datetime, timezone
+from xml.sax.saxutils import escape
 
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+matplotlib.rcParams["text.parse_math"] = False  # user labels may contain "$"
 import numpy as np  # noqa: E402
+from matplotlib.figure import Figure  # noqa: E402
 from reportlab.lib import colors  # noqa: E402
 from reportlab.lib.pagesizes import A4  # noqa: E402
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet  # noqa: E402
@@ -52,10 +54,15 @@ def raster_csv(result: dict) -> str:
 def _fig_to_image(fig, width_cm: float) -> Image:
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=160, bbox_inches="tight")
-    plt.close(fig)
     buf.seek(0)
     w, h = fig.get_size_inches()
     return Image(buf, width=width_cm * cm, height=width_cm * cm * h / w)
+
+
+def _subplots(*args, figsize, **kw):
+    """Like plt.subplots, without pyplot's global state (reports render in worker threads)."""
+    fig = Figure(figsize=figsize)
+    return fig, fig.subplots(*args, **kw)
 
 
 def _style(ax):
@@ -74,7 +81,7 @@ def fig_raster(result):
     col = _colors(groups)
     t = np.array(result["spikes"]["t"])
     ids = np.array(result["spikes"]["id"], dtype=int)
-    fig, ax = plt.subplots(figsize=(8, 3.6))
+    fig, ax = _subplots(figsize=(8, 3.6))
     for g in groups:
         m = (ids >= g["offset"]) & (ids < g["offset"] + g["count"])
         ax.scatter(t[m], ids[m], s=1.2, c=col[g["id"]], label=g["label"], linewidths=0, rasterized=True)
@@ -94,7 +101,7 @@ def fig_voltages(result):
     if not pops:
         return None
     col = _colors(meta["groups"])
-    fig, axes = plt.subplots(len(pops), 1, figsize=(8, 1.5 * len(pops)), sharex=True, squeeze=False)
+    fig, axes = _subplots(len(pops), 1, figsize=(8, 1.5 * len(pops)), sharex=True, squeeze=False)
     for ax, g in zip(axes[:, 0], pops):
         ax.plot(v["t"], v["v"][g["id"]][0], lw=0.7, color=col[g["id"]])
         ax.axhline(meta["thresholds"][g["id"]], color="#db2777", lw=0.6, ls="--")
@@ -109,7 +116,7 @@ def fig_rates(result):
     groups = meta["groups"]
     times = [(r["t0"] + r["t1"]) / 2 for r in result["rates"]]
     z = np.array([[r[g["id"]] for r in result["rates"]] for g in groups])
-    fig, ax = plt.subplots(figsize=(8, 0.45 * len(groups) + 1.0))
+    fig, ax = _subplots(figsize=(8, 0.45 * len(groups) + 1.0))
     dt_chunk = times[1] - times[0] if len(times) > 1 else meta["duration"]
     im = ax.imshow(z, aspect="auto", cmap="magma", origin="lower",
                    extent=(0, times[-1] + dt_chunk / 2 if times else 1, -0.5, len(groups) - 0.5))
@@ -128,7 +135,7 @@ def fig_weights(result):
         return None
     label = {g["id"]: g["label"] for g in result["meta"]["groups"]}
     hist = result["summary"]["weight_histograms"]
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(8, 2.6))
+    fig, (a1, a2) = _subplots(1, 2, figsize=(8, 2.6))
     ts = [w["t"] for w in result["weights"]]
     for i, p in enumerate(plastic):
         c = PALETTE[(i + 1) % len(PALETTE)]
@@ -177,20 +184,20 @@ def pdf_report(net: Network, result: dict, user_name: str | None = None) -> byte
     body = ParagraphStyle("body", parent=styles["BodyText"], fontSize=9, leading=12.5)
     small = ParagraphStyle("small", parent=body, fontSize=7.5, leading=10, textColor=colors.HexColor("#475569"))
     h1 = ParagraphStyle("h1", parent=styles["Title"], fontSize=18, spaceAfter=4, alignment=0)
-    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontSize=12, spaceBefore=10, spaceAfter=4, textColor=colors.HexColor("#0f172a"))
+    h2 = ParagraphStyle("h2", parent=styles["Heading2"], fontSize=12, spaceBefore=10, spaceAfter=4, keepWithNext=1, textColor=colors.HexColor("#0f172a"))
 
     meta, summary = result["meta"], result["summary"]
     energy = summary["energy"]
     story = []
-    story.append(Paragraph(f"NeuraSim simulation report: {net.name}", h1))
+    story.append(Paragraph(f"NeuraSim simulation report: {escape(net.name)}", h1))
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    story.append(Paragraph(f"Generated {stamp}" + (f" for {user_name}" if user_name else "") + " · NeuraSim spiking neural network simulator", small))
+    story.append(Paragraph(f"Generated {stamp}" + (f" for {escape(user_name)}" if user_name else "") + " · NeuraSim spiking neural network simulator", small))
     story.append(Spacer(1, 8))
     if net.description:
-        story.append(Paragraph(net.description, body))
+        story.append(Paragraph(escape(net.description), body))
     if net.biology:
         story.append(Spacer(1, 4))
-        story.append(Paragraph(f"<b>Biological inspiration.</b> {net.biology}", body))
+        story.append(Paragraph(f"<b>Biological inspiration.</b> {escape(net.biology)}", body))
 
     story.append(Paragraph("Run summary", h2))
     ratio = f"{energy['ratio']:.1f}×" if energy["ratio"] else "n/a"
@@ -243,7 +250,7 @@ def pdf_report(net: Network, result: dict, user_name: str | None = None) -> byte
     pop_rows = [["Population", "Model", "N", "Parameters"]]
     for p in net.populations:
         params = ", ".join(f"{k}={v:g}" for k, v in p.params.model_dump(exclude_none=True).items() if isinstance(v, (int, float)))
-        pop_rows.append([p.label or p.id, MODEL_NAMES[p.model], str(p.count), Paragraph(params, small)])
+        pop_rows.append([p.label or p.id, MODEL_NAMES[p.model], str(p.count), Paragraph(escape(params), small)])
     story.append(_table(pop_rows, col_widths=[4 * cm, 3.5 * cm, 1.2 * cm, 8.3 * cm]))
     if net.inputs:
         story.append(Spacer(1, 6))
@@ -263,7 +270,7 @@ def pdf_report(net: Network, result: dict, user_name: str | None = None) -> byte
             if s.plasticity == "stdp":
                 st = s.stdp
                 plast = f"STDP A+={st.A_plus:g} A-={st.A_minus:g} τ+={st.tau_plus:g} τ-={st.tau_minus:g} w∈[{st.w_min:g},{st.w_max:g}]"
-            syn_rows.append([Paragraph(f"{name[s.source]} → {name[s.target]}", small), f"{s.weight:g}", f"{s.p_connect:g}", f"{s.delay_ms:g} ms", Paragraph(plast, small)])
+            syn_rows.append([Paragraph(escape(f"{name[s.source]} → {name[s.target]}"), small), f"{s.weight:g}", f"{s.p_connect:g}", f"{s.delay_ms:g} ms", Paragraph(escape(plast), small)])
         story.append(_table(syn_rows, col_widths=[5.5 * cm, 1.4 * cm, 1.2 * cm, 1.6 * cm, 7.3 * cm]))
 
     buf = io.BytesIO()

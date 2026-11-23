@@ -82,9 +82,9 @@ class Projection:
             self.x[arrived] += 1.0
         cols = np.flatnonzero(post_spikes)
         if cols.size:
-            self.W[:, cols] += (s.A_plus * s.w_max) * self.x[:, None]
-            np.clip(self.W[:, cols], self.lo, self.hi, out=self.W[:, cols])
-            self.W[:, cols] *= self.mask[:, cols]
+            # Indexing with an array copies, so the clipped result must be assigned back.
+            updated = self.W[:, cols] + (s.A_plus * s.w_max) * self.x[:, None]
+            self.W[:, cols] = np.clip(updated, self.lo, self.hi) * self.mask[:, cols]
             self.y[cols] += 1.0
 
     def _clip_rows(self, idx: np.ndarray) -> None:

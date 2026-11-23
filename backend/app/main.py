@@ -1,8 +1,10 @@
 """FastAPI entry point for NeuraSim."""
 from __future__ import annotations
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from . import __version__
 from .auth import User, current_user
@@ -14,11 +16,18 @@ app = FastAPI(title="NeuraSim API", version=__version__, description="Spiking Ne
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(_request: Request, exc: RequestValidationError) -> JSONResponse:
+    """FastAPI's default minus the echoed input, which may be huge or NaN (not valid JSON)."""
+    detail = [{"loc": list(e["loc"]), "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
+    return JSONResponse({"detail": detail}, status_code=422)
+
 
 app.include_router(simulate.router)
 app.include_router(benchmark.router)

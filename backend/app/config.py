@@ -20,6 +20,11 @@ class Settings:
     )
     max_neurons: int = field(default_factory=lambda: int(os.getenv("MAX_NEURONS", "5000")))
     max_steps: int = field(default_factory=lambda: int(os.getenv("MAX_STEPS", "20000")))
+    # Potential synapses (n_pre x n_post, summed over projections); dense matrices, so this bounds memory.
+    max_synapses: int = field(default_factory=lambda: int(os.getenv("MAX_SYNAPSES", "4000000")))
+    max_concurrent: int = field(default_factory=lambda: int(os.getenv("MAX_CONCURRENT", "2")))
+    # Optional regex for extra origins, e.g. your Vercel preview deployments.
+    cors_origin_regex: str | None = field(default_factory=lambda: os.getenv("CORS_ORIGIN_REGEX") or None)
     data_dir: str = field(default_factory=lambda: os.getenv("DATA_DIR", os.path.join(os.path.dirname(__file__), "..", "data")))
 
     @property

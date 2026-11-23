@@ -14,7 +14,7 @@
   "network": {
     "version": 1,
     "name": "STDP learning demo",
-    "description": "Ten output neurons receive two groups of afferents that fire at exactly the same average rate (20 Hz). One group fires in near-synchronous volleys every 50 ms; the other is random. Spike-timing dependent plasticity strengthens the synapses whose spikes reliably arrive just *before* the output fires, so the correlated synapses grow while the random ones weaken: the neuron learns which inputs belong together, without a teacher.",
+    "description": "Ten output neurons receive two groups of afferents that fire at exactly the same average rate (20 Hz). One group fires in near-synchronous volleys every 50 ms; the other is random. Spike-timing dependent plasticity strengthens the synapses whose spikes reliably arrive just before the output fires, so the correlated synapses grow while the random ones weaken: the neuron learns which inputs belong together, without a teacher.",
     "biology": "In real synapses, a presynaptic spike arriving a few ms before the postsynaptic spike causes long-term potentiation, and the reverse order causes depression (Bi & Poo 1998). This 'fire together, wire together' rule with a causal twist lets neurons detect repeating spatiotemporal patterns and is a leading candidate for unsupervised learning in cortex.",
     "sim": {
       "dt": 0.2,

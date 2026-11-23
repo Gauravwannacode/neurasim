@@ -198,7 +198,7 @@ def stdp_demo():
             pops, inputs, syns,
             "Ten output neurons receive two groups of afferents that fire at exactly the same average rate (20 Hz). One "
             "group fires in near-synchronous volleys every 50 ms; the other is random. Spike-timing dependent plasticity "
-            "strengthens the synapses whose spikes reliably arrive just *before* the output fires, so the correlated "
+            "strengthens the synapses whose spikes reliably arrive just before the output fires, so the correlated "
             "synapses grow while the random ones weaken: the neuron learns which inputs belong together, without a teacher.",
             "In real synapses, a presynaptic spike arriving a few ms before the postsynaptic spike causes long-term "
             "potentiation, and the reverse order causes depression (Bi & Poo 1998). This 'fire together, wire together' "

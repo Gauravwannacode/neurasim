@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 
 // Pages are code-split: Plotly (~4 MB) is only loaded once a chart page is opened.
+const Landing = lazy(() => import("./pages/Landing"));
 const Builder = lazy(() => import("./pages/Builder"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Presets = lazy(() => import("./pages/Presets"));
@@ -18,6 +19,7 @@ export default function App() {
       <TokenBridge />
       <Suspense fallback={<Loading />}>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route path="/builder" element={<Builder />} />
@@ -25,7 +27,7 @@ export default function App() {
             <Route path="/presets" element={<Presets />} />
             <Route path="/benchmark" element={<Benchmark />} />
           </Route>
-          <Route path="*" element={<Navigate to="/builder" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </AuthProvider>

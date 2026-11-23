@@ -24,20 +24,20 @@ function Palette() {
   const jitter = () => ({ x: 260 + (n % 4) * 60, y: 60 + (n % 6) * 70 });
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col gap-4 overflow-y-auto border-r border-ink-700 bg-ink-900 p-3">
+    <aside className="hidden w-60 shrink-0 flex-col gap-5 overflow-y-auto border-r border-ink-700 bg-ink-900 p-4 md:flex">
       <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Neuron populations</h3>
+        <h3 className="mb-2 text-sm font-semibold text-bone">Neuron populations</h3>
         <div className="flex flex-col gap-1.5">
           {NEURON_MODELS.map((m) => (
             <button key={m} className="btn-ghost justify-start text-left" onClick={() => addPopulation(makePopulation(m, jitter()))}>
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: MODEL_COLORS[m] }} />
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: MODEL_COLORS[m] }} />
               {MODEL_LABELS[m]}
             </button>
           ))}
         </div>
       </div>
       <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Input spike trains</h3>
+        <h3 className="mb-2 text-sm font-semibold text-bone">Input spike trains</h3>
         <div className="flex flex-col gap-1.5">
           {INPUT_KINDS.map((k) => (
             <button key={k} className="btn-ghost justify-start text-left" onClick={() => addInput(makeInput(k, { x: 20, y: 60 + (n % 6) * 70 }))}>
@@ -49,7 +49,7 @@ function Palette() {
       </div>
       <div className="mt-auto space-y-1 text-[11px] leading-relaxed text-slate-500">
         <p>
-          <span className="text-sky-400">→</span> excitatory · <span className="text-rose-400">●</span> inhibitory ·{" "}
+          <span className="text-sky-400">→</span> excitatory · <span className="text-azure">●</span> inhibitory ·{" "}
           <span className="text-fuchsia-300">- -</span> plastic (STDP)
         </p>
       </div>
@@ -77,8 +77,8 @@ export default function Builder() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-ink-700 bg-ink-900/60 px-4 py-2">
-        <h2 className="mr-2 truncate font-semibold">{network.name}</h2>
+      <div className="flex flex-wrap items-center gap-2 border-b border-ink-700 px-4 py-2.5">
+        <h2 className="mr-2 truncate text-lg font-semibold text-bone">{network.name}</h2>
         <div className="flex items-center gap-2">
           <NetworkJsonButtons />
         </div>
@@ -90,7 +90,7 @@ export default function Builder() {
             Reset
           </button>
           <button className="btn-primary" disabled={empty} onClick={() => navigate("/dashboard", { state: { autorun: true } })}>
-            ▶ Run simulation
+            Run simulation
           </button>
         </div>
       </div>
@@ -101,7 +101,7 @@ export default function Builder() {
             <NetworkCanvas rates={summary?.mean_rates} learnedWeights={learned} />
           </ReactFlowProvider>
         </div>
-        <Inspector />
+        <div className="hidden md:block"><Inspector /></div>
       </div>
     </div>
   );

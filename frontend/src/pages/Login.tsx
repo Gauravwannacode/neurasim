@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { authConfigured } from "../lib/supabase";
 
@@ -7,24 +7,21 @@ const GITHUB_PATH =
 
 export default function Login() {
   const { user, loading, signInWithGitHub, continueAsGuest } = useAuth();
-  if (!loading && user) return <Navigate to="/builder" replace />;
+  const from = (useLocation().state as { from?: string } | null)?.from ?? "/builder";
+  if (!loading && user) return <Navigate to={from} replace />;
 
   return (
-    <div className="flex min-h-full items-center justify-center p-6">
-      <div className="panel w-full max-w-md p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <img src="/favicon.svg" className="h-10 w-10" alt="" />
-          <div>
-            <h1 className="text-2xl font-semibold">NeuraSim</h1>
-            <p className="text-sm text-slate-400">Interactive spiking neural network simulator</p>
-          </div>
-        </div>
-        <p className="mb-6 text-sm leading-relaxed text-slate-300">
-          Build networks of biologically-inspired neurons, watch them spike in real time, and see why
-          event-driven computation is so energy efficient.
+    <div className="flex min-h-full items-center justify-center bg-[radial-gradient(46rem_26rem_at_50%_115%,rgba(255,106,77,0.22),transparent_70%)] p-6">
+      <div className="w-full max-w-md">
+        <Link to="/" className="mb-10 flex w-fit items-center gap-2 text-slate-300 hover:text-bone">
+          <img src="/favicon.svg" className="h-7 w-7" alt="" /> NeuraSim
+        </Link>
+        <h1 className="display text-6xl text-bone">Come in.</h1>
+        <p className="mb-8 mt-5 text-lg leading-relaxed text-slate-300">
+          Sign in to put your name on reports, or walk straight in as a guest. Everything in the lab works either way.
         </p>
         <button
-          className="btn-primary w-full justify-center py-2.5"
+          className="btn-primary w-full justify-center py-3 text-base"
           disabled={!authConfigured}
           onClick={signInWithGitHub}
         >
@@ -34,12 +31,11 @@ export default function Login() {
           Sign in with GitHub
         </button>
         {!authConfigured && (
-          <p className="mt-2 text-xs text-amber-300/80">
-            Supabase is not configured (set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY). Guest mode is
-            fully functional.
+          <p className="mt-2 text-sm text-slate-400">
+            GitHub sign-in is not set up on this copy of NeuraSim.
           </p>
         )}
-        <button className="btn-ghost mt-3 w-full justify-center py-2.5" onClick={continueAsGuest}>
+        <button className="btn-ghost mt-3 w-full justify-center py-3 text-base" onClick={continueAsGuest}>
           Continue as guest
         </button>
       </div>

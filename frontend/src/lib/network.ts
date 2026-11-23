@@ -19,9 +19,9 @@ export const MODEL_LABELS: Record<NeuronModel, string> = {
 };
 
 export const MODEL_COLORS: Record<NeuronModel, string> = {
-  lif: "#38bdf8",
-  izhikevich: "#a78bfa",
-  hh: "#34d399",
+  lif: "#ff6a4d",
+  izhikevich: "#8f7bf0",
+  hh: "#22c3a6",
 };
 
 const position = z.object({ x: z.number(), y: z.number() });

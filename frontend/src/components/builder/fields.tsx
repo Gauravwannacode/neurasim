@@ -104,7 +104,7 @@ export function SelectField<T extends string>({
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-b border-ink-700 px-4 py-3">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</h3>
+      <h3 className="mb-2 text-sm font-semibold text-bone">{title}</h3>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2">{children}</div>
     </section>
   );

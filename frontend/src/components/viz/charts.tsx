@@ -3,14 +3,14 @@ import type { Data } from "plotly.js";
 import Plot, { GROUP_PALETTE, baseLayout } from "./Plot";
 import { useSimStore } from "../../lib/simStore";
 
-function useGroupColors() {
+export function useGroupColors() {
   const meta = useSimStore((s) => s.meta);
   return useMemo(() => {
     const out: Record<string, string> = {};
     let popIndex = 0;
     let inIndex = 0;
     for (const g of meta?.groups ?? []) {
-      out[g.id] = g.kind === "input" ? ["#facc15", "#fde68a", "#fbbf24"][inIndex++ % 3] : GROUP_PALETTE[(popIndex++ % (GROUP_PALETTE.length - 1)) + 1];
+      out[g.id] = g.kind === "input" ? ["#c98500", "#a87420", "#e0a33a"][inIndex++ % 3] : GROUP_PALETTE[(popIndex++ % (GROUP_PALETTE.length - 1)) + 1];
     }
     return out;
   }, [meta]);
@@ -47,12 +47,14 @@ export function SpikeRaster() {
       xref: "paper" as const,
       y0: g.offset - 0.5,
       y1: g.offset - 0.5,
-      line: { color: "#334155", width: 1, dash: "dot" as const },
+      line: { color: "#383243", width: 1, dash: "dot" as const },
     }));
     return baseLayout({
       xaxis: { title: { text: "time (ms)" }, range: [0, meta?.duration ?? 100] },
       yaxis: { title: { text: "neuron id" }, range: [-1, meta?.n_neurons ?? 10] },
       shapes,
+      margin: { l: 52, r: 14, t: 56, b: 40 },
+      legend: { orientation: "h", x: 0, y: 1.02, yanchor: "bottom", bgcolor: "rgba(0,0,0,0)", font: { size: 11 }, itemsizing: "constant" },
     });
   }, [meta]);
 
@@ -82,7 +84,7 @@ export function VoltageTrace() {
       name: `neuron ${ids[i]}`,
       x: vTimes,
       y: traces[i],
-      line: { width: show.length > 1 ? 1 : 1.6, color: show.length > 1 ? GROUP_PALETTE[(k % 8) + 1] : "#38bdf8" },
+      line: { width: show.length > 1 ? 1 : 1.6, color: show.length > 1 ? GROUP_PALETTE[(k % 6) + 1] : "#e0563c" },
       hovertemplate: "t=%{x:.1f} ms<br>V=%{y:.1f} mV<extra></extra>",
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,11 +98,11 @@ export function VoltageTrace() {
       showlegend: neuronSel === "all",
       shapes:
         vth !== undefined
-          ? [{ type: "line", x0: 0, x1: 1, xref: "paper", y0: vth, y1: vth, line: { color: "#f472b6", width: 1, dash: "dash" } }]
+          ? [{ type: "line", x0: 0, x1: 1, xref: "paper", y0: vth, y1: vth, line: { color: "#a39ba8", width: 1, dash: "dash" } }]
           : [],
       annotations:
         vth !== undefined
-          ? [{ x: 1, xref: "paper", y: vth, text: "threshold", showarrow: false, xanchor: "right", yanchor: "bottom", font: { color: "#f472b6", size: 10 } }]
+          ? [{ x: 1, xref: "paper", y: vth, text: "threshold", showarrow: false, xanchor: "right", yanchor: "bottom", font: { color: "#a39ba8", size: 10 } }]
           : [],
     });
   }, [meta, pop, neuronSel]);
@@ -144,11 +146,10 @@ export function ActivityHeatmap() {
         y: groups.map((g) => g.label),
         z: groups.map((g) => rates[g.id] ?? []),
         colorscale: [
-          [0, "#0a0d14"],
-          [0.15, "#1e3a8a"],
-          [0.4, "#7c3aed"],
-          [0.7, "#f472b6"],
-          [1, "#fde68a"],
+          [0, "#100e17"],
+          [0.35, "#5a2a22"],
+          [0.7, "#c4513a"],
+          [1, "#ffc2b0"],
         ],
         colorbar: { title: { text: "Hz", side: "right" }, thickness: 10, outlinewidth: 0, tickfont: { size: 10 } },
         hovertemplate: "%{y}<br>t=%{x:.0f} ms<br>%{z:.1f} Hz<extra></extra>",
@@ -191,15 +192,15 @@ export function WeightEvolution() {
         const h = summary?.weight_histograms[p.id];
         if (!h) return [];
         const centers = h.bins.slice(0, -1).map((b, i) => (b + h.bins[i + 1]) / 2);
-        const c = GROUP_PALETTE[(k % 8) + 1];
+        const c = GROUP_PALETTE[(k % 6) + 1];
         return [
-          { type: "bar", x: centers, y: h.initial, name: `${label(p.source)}→${label(p.target)} initial`, marker: { color: "#475569" }, opacity: 0.7 },
+          { type: "bar", x: centers, y: h.initial, name: `${label(p.source)}→${label(p.target)} initial`, marker: { color: "#817989" }, opacity: 0.7 },
           { type: "bar", x: centers, y: h.final, name: `${label(p.source)}→${label(p.target)} final`, marker: { color: c }, opacity: 0.8 },
         ] as Data[];
       });
     }
     return plastic.flatMap((p, k) => {
-      const c = GROUP_PALETTE[(k % 8) + 1];
+      const c = GROUP_PALETTE[(k % 6) + 1];
       const lines: Data[] = (samples[p.id] ?? []).map((ys, i) => ({
         type: "scatter",
         mode: "lines",
@@ -290,8 +291,8 @@ export function EnergyCompare() {
       orientation: "h",
       y: ["ANN (dense MACs)", "SNN (event SynOps)"],
       x: [annNj, snnNj],
-      marker: { color: ["#64748b", "#38bdf8"] },
-      text: [`${annNj.toPrecision(3)} nJ`, `${snnNj.toPrecision(3)} nJ`],
+      marker: { color: ["#817989", "#e0563c"] },
+      text: [`${fmt(annNj)} nJ`, `${fmt(snnNj)} nJ`],
       textposition: "auto",
       hovertemplate: "%{y}: %{x:.3g} nJ<extra></extra>",
     },
@@ -307,7 +308,7 @@ export function EnergyCompare() {
       <div className="grid grid-cols-3 gap-2 text-center">
         <Stat label="SNN SynOps" value={fmt(live.snn_synops)} sub={`× ${live.e_ac_pj} pJ`} color="text-sky-300" />
         <Stat label="ANN MACs" value={fmt(live.ann_macs)} sub={`× ${live.e_mac_pj} pJ`} color="text-slate-300" />
-        <Stat label="Efficiency" value={ratio ? `${ratio.toFixed(1)}×` : "–"} sub="less than dense ANN" color="text-emerald-300" />
+        <Stat label="Against dense ANN" value={ratio ? `${ratio.toFixed(1)}×` : "–"} sub="less, at most" color="text-bone" />
       </div>
       <div className="min-h-0 flex-1">
         <Plot data={data} layout={layout} />
@@ -322,10 +323,10 @@ export function EnergyCompare() {
 
 export function Stat({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="rounded-lg border border-ink-700 bg-ink-950/60 px-2 py-1.5">
-      <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
+    <div className="rounded-xl bg-ink-950/60 px-3 py-2">
+      <div className="text-xs text-slate-400">{label}</div>
       <div className={`font-mono text-lg font-semibold ${color ?? "text-slate-100"}`}>{value}</div>
-      {sub && <div className="text-[10px] text-slate-500">{sub}</div>}
+      {sub && <div className="text-xs text-slate-500">{sub}</div>}
     </div>
   );
 }

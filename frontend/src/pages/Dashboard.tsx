@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { simulationKey } from "../lib/network";
 import { useNetworkStore } from "../lib/store";
@@ -6,14 +6,16 @@ import { useSimStore } from "../lib/simStore";
 import { RunExportButtons } from "../components/export/ExportButtons";
 import { ActivityHeatmap, EnergyCompare, SpikeRaster, Stat, VoltageTrace, WeightEvolution } from "../components/viz/charts";
 
+const NetworkScene = lazy(() => import("../components/three/NetworkScene"));
+
 function Card({ title, subtitle, children, className }: { title: string; subtitle?: string; children: ReactNode; className?: string }) {
   return (
-    <section className={`panel flex min-h-0 flex-col p-3 ${className ?? ""}`}>
+    <section className={`panel flex min-h-0 flex-col p-4 ${className ?? ""}`}>
       <header className="mb-1 flex items-baseline gap-2">
-        <h3 className="text-sm font-semibold text-slate-200">{title}</h3>
+        <h3 className="font-semibold text-bone">{title}</h3>
         {subtitle && <span className="truncate text-xs text-slate-500">{subtitle}</span>}
       </header>
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
     </section>
   );
 }
@@ -49,9 +51,9 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-3 border-b border-ink-700 bg-ink-900/60 px-4 py-2">
+      <div className="flex flex-wrap items-center gap-3 border-b border-ink-700 px-4 py-2.5">
         <div className="min-w-0">
-          <h2 className="truncate font-semibold">{runNetwork?.name ?? network.name}</h2>
+          <h1 className="truncate text-lg font-semibold text-bone">{runNetwork?.name ?? network.name}</h1>
           <p className="text-xs text-slate-500">
             {meta
               ? `${meta.n_neurons.toLocaleString()} neurons · ${meta.n_connections.toLocaleString()} synapses · ${meta.duration} ms @ dt=${meta.dt} ms`
@@ -66,17 +68,17 @@ export default function Dashboard() {
             ))}
           </select>
           {running ? (
-            <button className="btn-danger" onClick={stop}>■ Stop</button>
+            <button className="btn-danger" onClick={stop}>Stop</button>
           ) : (
             <button className="btn-primary" onClick={() => start(network, pace)} disabled={network.populations.length === 0}>
-              ▶ {status === "idle" ? "Run" : "Re-run"}
+              {status === "idle" ? "Run" : "Re-run"}
             </button>
           )}
           <RunExportButtons />
         </div>
         <div className="h-1 w-full overflow-hidden rounded bg-ink-700">
           <div
-            className={`h-full transition-all ${status === "error" ? "bg-rose-500" : status === "done" ? "bg-emerald-400" : "bg-sky-400"}`}
+            className={`h-full transition-all ${status === "error" ? "bg-rose-500" : status === "done" ? "bg-teal-400" : "bg-sky-400"}`}
             style={{ width: `${Math.round(progress * 100)}%` }}
           />
         </div>
@@ -95,13 +97,16 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid flex-1 auto-rows-[minmax(300px,1fr)] grid-cols-1 gap-3 overflow-auto p-3 xl:grid-cols-3">
-          <Card title="Spike raster" subtitle="each dot is one spike" className="xl:col-span-2">
+          <Card title="Network in 3D" subtitle="drag to orbit; warm links excite, cool links inhibit" className="xl:col-span-2 xl:row-span-2 min-h-[440px]">
+            <Suspense fallback={<p className="text-sm text-slate-400">Loading the 3D view…</p>}><NetworkScene /></Suspense>
+          </Card>
+          <Card title="Spike raster" subtitle="each dot is one spike" className="xl:col-span-2 xl:order-3">
             <SpikeRaster />
           </Card>
           <Card title="Energy estimate" subtitle="SNN vs equivalent ANN">
             <EnergyCompare />
           </Card>
-          <Card title="Membrane voltage" subtitle="integrate → threshold → fire → reset" className="xl:col-span-2">
+          <Card title="Membrane voltage" subtitle="integrate → threshold → fire → reset" className="xl:col-span-2 xl:order-4">
             <VoltageTrace />
           </Card>
           <Card title="Summary">
@@ -109,17 +114,17 @@ export default function Dashboard() {
               <Stat label="Total spikes" value={(summary?.total_spikes ?? 0).toLocaleString()} />
               <Stat label="Wall time" value={summary ? `${summary.wall_time_s.toFixed(2)} s` : running ? "…" : "–"} />
               {pops.slice(0, 6).map((p) => (
-                <Stat key={p.id} label={`${p.label} rate`} value={summary ? `${summary.mean_rates[p.id].toFixed(1)} Hz` : "…"} color="text-sky-300" />
+                <Stat key={p.id} label={`${p.label} rate`} value={summary ? `${summary.mean_rates[p.id].toFixed(1)} Hz` : "…"} />
               ))}
             </div>
             {summary?.truncated && (
               <p className="mt-2 text-xs text-amber-300">Spike recording was capped at 2M spikes; rates and energy are still exact.</p>
             )}
           </Card>
-          <Card title="Population activity" subtitle="firing rate per population over time">
+          <Card title="Population activity" subtitle="firing rate per population over time" className="xl:order-3">
             <ActivityHeatmap />
           </Card>
-          <Card title="Synaptic weights" subtitle="STDP learning" className="xl:col-span-2">
+          <Card title="Synaptic weights" subtitle="STDP learning" className="xl:order-4">
             <WeightEvolution />
           </Card>
         </div>

@@ -17,14 +17,22 @@ function selfLoopPath(sx: number, sy: number, tx: number, ty: number): [string, 
   return [path, (sx + tx) / 2, Math.min(sy, ty) - lift * 0.75];
 }
 
+/** Feedback connections loop underneath instead of hiding behind the nodes. */
+function feedbackPath(sx: number, sy: number, tx: number, ty: number): [string, number, number] {
+  const floor = Math.max(sy, ty) + 72;
+  return [`M ${sx} ${sy} C ${sx + 70} ${floor}, ${tx - 70} ${floor}, ${tx} ${ty}`, (sx + tx) / 2, (sy + ty) / 8 + floor * 0.75];
+}
+
 export const SynapseEdge = memo(function SynapseEdge(props: EdgeProps<SynapseFlowEdge>) {
   const { id, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected } = props;
   const [path, labelX, labelY] =
     source === target
       ? selfLoopPath(sourceX, sourceY, targetX, targetY)
-      : getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
+      : targetX < sourceX
+        ? feedbackPath(sourceX, sourceY, targetX, targetY)
+        : getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
   const inhibitory = (data?.weight ?? 0) < 0;
-  const color = inhibitory ? "#fb7185" : "#38bdf8";
+  const color = inhibitory ? "#5ea3f0" : "#ff6a4d";
   const width = Math.min(6, 1.2 + Math.abs(data?.weight ?? 1) * 0.35);
 
   return (
@@ -66,10 +74,10 @@ export function EdgeMarkers() {
     <svg style={{ position: "absolute", width: 0, height: 0 }}>
       <defs>
         <marker id="excitatory-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8" />
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff6a4d" />
         </marker>
         <marker id="inhibitory-dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
-          <circle cx="5" cy="5" r="4" fill="#fb7185" />
+          <circle cx="5" cy="5" r="4" fill="#5ea3f0" />
         </marker>
       </defs>
     </svg>

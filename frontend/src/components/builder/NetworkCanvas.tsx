@@ -141,13 +141,13 @@ export default function NetworkCanvas({ rates, learnedWeights }: Props) {
         fitView
         minZoom={0.2}
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="#2e3a54" />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="#2b2637" />
         <Controls position="bottom-left" />
         <MiniMap
           pannable
           zoomable
-          className="!bg-ink-900"
-          nodeColor={(n) => (n.type === "spikeInput" ? "#facc15" : MODEL_COLORS[(n.data as { model: keyof typeof MODEL_COLORS }).model])}
+          className="!hidden !bg-ink-900 lg:!block"
+          nodeColor={(n) => (n.type === "spikeInput" ? "#f6b73c" : MODEL_COLORS[(n.data as { model: keyof typeof MODEL_COLORS }).model])}
         />
       </ReactFlow>
     </div>

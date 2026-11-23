@@ -3,17 +3,35 @@
 @tailwind utilities;
 
 @layer components {
-  .panel { @apply rounded-xl border border-ink-700 bg-ink-900/80; }
-  .btn { @apply inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed; }
+  .panel { @apply rounded-2xl border border-ink-700 bg-ink-900; }
+  .btn { @apply inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed; }
   .btn-primary { @apply btn bg-sky-500 text-ink-950 hover:bg-sky-400; }
-  .btn-ghost { @apply btn border border-ink-600 text-slate-200 hover:bg-ink-700; }
+  .btn-ghost { @apply btn border border-ink-600 text-slate-200 hover:border-slate-500 hover:bg-ink-700; }
   .btn-danger { @apply btn border border-rose-500/40 text-rose-300 hover:bg-rose-500/10; }
   .field-label { @apply block text-xs font-medium text-slate-400 mb-1; }
-  .input { @apply w-full rounded-md border border-ink-600 bg-ink-950 px-2 py-1.5 text-sm text-slate-100 focus:border-sky-400 focus:outline-none; }
-  .chip { @apply inline-flex items-center rounded-full bg-ink-700 px-2 py-0.5 text-xs text-slate-300; }
+  .input { @apply w-full rounded-lg border border-ink-600 bg-ink-950 px-2.5 py-1.5 text-sm text-slate-100 focus:border-sky-400 focus:outline-none; }
+  .chip { @apply inline-flex items-center rounded-full bg-ink-700 px-2.5 py-0.5 text-xs text-slate-300; }
+  /* Display type: Anybody, set wide and heavy. */
+  .display { font-family: Anybody, "Instrument Sans", system-ui, sans-serif; font-variation-settings: "wdth" 112, "wght" 780; letter-spacing: -0.025em; line-height: 0.98; text-wrap: balance; }
 }
 
 html, body, #root { height: 100%; }
+html { color-scheme: dark; background: #08070c; scrollbar-color: #383243 transparent; }
+body { @apply bg-ink-950 font-sans text-slate-200 antialiased; }
+::selection { background: #ff6a4d; color: #08070c; }
+:focus-visible { outline: 2px solid #ff8a6b; outline-offset: 2px; }
 .react-flow__attribution { display: none; }
+.react-flow { --xy-background-color: #08070c; --xy-minimap-background-color: #100e17; --xy-minimap-mask-background-color: rgb(35 31 46 / 0.6); }
 
 @keyframes dash { to { stroke-dashoffset: -20; } }
+
+/* Cursor-following light on cards; position is set by <Spotlight>. */
+.spotlight { position: relative; isolation: isolate; overflow: hidden; }
+.spotlight::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity 0.35s;
+  background: radial-gradient(26rem circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--glow, #ff6a4d) 22%, transparent), transparent 70%);
+}
+.spotlight:hover::before { opacity: 1; }
+
+html[data-motion="on"] { scroll-behavior: smooth; }
+html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

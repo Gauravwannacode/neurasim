@@ -71,7 +71,7 @@ export const InputNode = memo(function InputNode({ data, selected }: NodeProps<I
         <span>n = {data.count}</span>
         {data.kind !== "pattern" && <span>{data.rateHz} Hz</span>}
       </div>
-      <SpikeGlyph color="#facc15" density={data.kind === "pattern" ? 6 : data.rateHz / 3} />
+      <SpikeGlyph color="#f6b73c" density={data.kind === "pattern" ? 6 : data.rateHz / 3} />
       <Handle type="source" position={Position.Right} className="!h-3 !w-3 !border-2 !border-ink-950 !bg-amber-300" />
     </div>
   );

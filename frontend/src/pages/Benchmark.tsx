@@ -47,8 +47,8 @@ interface BenchmarkResult {
   };
 }
 
-const ANN_COLOR = "#94a3b8";
-const SNN_COLOR = "#38bdf8";
+const ANN_COLOR = "#817989";
+const SNN_COLOR = "#e0563c";
 
 function Card({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
@@ -62,7 +62,7 @@ function Card({ title, children, className }: { title: string; children: ReactNo
 function ModelColumn({ name, color, r, energy, ops }: { name: string; color: string; r: ModelResult; energy: [string, string]; ops: string }) {
   return (
     <div className="rounded-xl border p-4" style={{ borderColor: `${color}55` }}>
-      <h4 className="mb-3 text-lg font-semibold" style={{ color }}>{name}</h4>
+      <h4 className="mb-3 flex items-center gap-2.5 text-lg font-semibold text-bone"><span className="h-3 w-3 rounded-full" style={{ background: color }} />{name}</h4>
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Test accuracy" value={`${(r.accuracy * 100).toFixed(2)}%`} />
         <Stat label="Energy / inference" value={energy[0]} sub={energy[1]} />
@@ -131,7 +131,7 @@ export default function Benchmark() {
           type: "bar",
           x: ["ANN<br>dense", "ANN<br>skip zeros", "SNN<br>synapses", "SNN<br>+ updates"],
           y: energyValues,
-          marker: { color: [ANN_COLOR, "#64748b", SNN_COLOR, "#0284c7"] },
+          marker: { color: [ANN_COLOR, "#655e6d", SNN_COLOR, "#b8452f"] },
           text: energyValues.map((v) => v.toFixed(0)),
           textposition: "auto",
           hoverinfo: "skip",
@@ -158,7 +158,7 @@ export default function Benchmark() {
       } as unknown as Data,
     ];
     const inRaster: Data[] = [
-      { type: "scattergl", mode: "markers", x: example.input_spikes.t, y: example.input_spikes.id, name: "input (pixels)", marker: { size: 3, color: "#facc15" } },
+      { type: "scattergl", mode: "markers", x: example.input_spikes.t, y: example.input_spikes.id, name: "input (pixels)", marker: { size: 3, color: "#c98500" } },
     ];
     const hidRaster: Data[] = [
       { type: "scattergl", mode: "markers", x: example.hidden_spikes.t, y: example.hidden_spikes.id, name: "hidden LIF", marker: { size: 3, color: SNN_COLOR } },
@@ -187,19 +187,19 @@ export default function Benchmark() {
   const running = progress !== null;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 p-4">
+    <div className="mx-auto max-w-7xl space-y-5 p-5 md:p-10">
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <h2 className="text-xl font-semibold">MNIST benchmark: spiking vs. conventional network</h2>
-          <p className="text-sm text-slate-400">
-            Same 784–{res?.config.hidden ?? 256}–10 architecture, same training data. The SNN sees each digit as Poisson spike trains over{" "}
+          <h1 className="display text-4xl text-bone md:text-5xl">Spikes against numbers</h1>
+          <p className="mt-3 text-slate-300">
+            MNIST digits, same 784–{res?.config.hidden ?? 256}–10 architecture, same training data. The SNN sees each digit as Poisson spike trains over{" "}
             {res?.config.timesteps ?? 32} ms.
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
           {res && <span className="text-xs text-slate-500">results from {new Date(res.created_at).toLocaleString()} · SNN via {res.snn_backend}</span>}
           <button className="btn-ghost" onClick={rerun} disabled={running || (res !== null && !res.can_run)} title={res && !res.can_run ? "PyTorch is not installed on the server" : undefined}>
-            {running ? "Training…" : "↻ Retrain both"}
+            {running ? "Training…" : "Retrain both"}
           </button>
         </div>
       </div>

@@ -45,10 +45,10 @@ export function NetworkJsonButtons() {
   return (
     <>
       <button className="btn-ghost" onClick={() => fileRef.current?.click()} title="Load a network JSON file">
-        ⤒ Import
+        Import
       </button>
       <button className="btn-ghost" onClick={exportJson} title="Download this network as JSON">
-        ⤓ Export JSON
+        Export JSON
       </button>
       <input
         ref={fileRef}
@@ -108,10 +108,10 @@ export function RunExportButtons() {
   return (
     <>
       <button className="btn-ghost" disabled={!ready} onClick={exportCsv} title="Download every spike as CSV">
-        ⤓ CSV
+        CSV
       </button>
       <button className="btn-ghost" disabled={!ready || busy} onClick={exportPdf} title="Generate a PDF summary report">
-        {busy ? "Rendering…" : "⤓ PDF report"}
+        {busy ? "Rendering…" : "PDF report"}
       </button>
       {error && <span className="max-w-xs truncate text-xs text-rose-300" title={error}>{error}</span>}
     </>

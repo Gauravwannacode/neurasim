@@ -2,19 +2,23 @@ import { useEffect, useRef } from "react";
 import Plotly from "plotly.js-dist-min";
 import type { Config, Data, Layout } from "plotly.js";
 
-export const GROUP_PALETTE = ["#facc15", "#38bdf8", "#f472b6", "#34d399", "#a78bfa", "#fb923c", "#22d3ee", "#e879f9", "#a3e635"];
+/**
+ * Slot 0 is reserved for inputs; populations take slots 1-6 in this fixed order,
+ * checked for colour-vision deficiency on the panel background.
+ */
+export const GROUP_PALETTE = ["#c98500", "#8f7bf0", "#1f9f87", "#e0563c", "#3987e5", "#d55181", "#7f9a1f"];
 
 export const baseLayout = (overrides: Partial<Layout> = {}): Partial<Layout> => ({
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)",
-  font: { family: "Inter, system-ui, sans-serif", size: 11, color: "#94a3b8" },
+  font: { family: "Instrument Sans, system-ui, sans-serif", size: 11, color: "#a39ba8" },
   margin: { l: 52, r: 14, t: 8, b: 40 },
   showlegend: true,
   legend: { orientation: "h", y: 1.12, x: 0, bgcolor: "rgba(0,0,0,0)", font: { size: 10 } },
   hovermode: "closest",
   ...overrides,
-  xaxis: { gridcolor: "#1e293b", zerolinecolor: "#334155", linecolor: "#334155", ...(overrides.xaxis ?? {}) },
-  yaxis: { gridcolor: "#1e293b", zerolinecolor: "#334155", linecolor: "#334155", ...(overrides.yaxis ?? {}) },
+  xaxis: { gridcolor: "#1d1926", zerolinecolor: "#383243", linecolor: "#383243", ...(overrides.xaxis ?? {}) },
+  yaxis: { gridcolor: "#1d1926", zerolinecolor: "#383243", linecolor: "#383243", ...(overrides.yaxis ?? {}) },
 });
 
 const config: Partial<Config> = {

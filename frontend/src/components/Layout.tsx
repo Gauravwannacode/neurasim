@@ -7,16 +7,17 @@ import CommandPalette from "./CommandPalette";
 const links = [
   { to: "/builder", label: "Builder" },
   { to: "/dashboard", label: "Dashboard" },
+  { to: "/explore", label: "Explore" },
   { to: "/presets", label: "Circuits" },
   { to: "/benchmark", label: "Benchmark" },
 ];
 
 export default function Layout() {
   const { user, loading, signOut } = useAuth();
-  const { pathname, search } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const [palette, setPalette] = useState(false);
   if (loading) return <div className="p-8 text-slate-400">Loading…</div>;
-  if (!user) return <Navigate to="/login" replace state={{ from: pathname + search }} />;
+  if (!user) return <Navigate to="/login" replace state={{ from: pathname + search + hash }} />;
 
   return (
     <div className="flex h-full flex-col">
@@ -25,10 +26,10 @@ export default function Layout() {
           <img src="/favicon.svg" className="h-6 w-6" alt="" />
           <span className="text-lg font-semibold tracking-tight">NeuraSim</span>
         </Link>
-        <nav className="order-last flex w-full justify-center overflow-x-auto md:absolute md:left-1/2 md:order-none md:w-auto md:-translate-x-1/2" aria-label="Main">
+        <nav className="order-last flex w-full overflow-x-auto sm:justify-center md:absolute md:left-1/2 md:order-none md:w-auto md:-translate-x-1/2" aria-label="Main">
           <div className="flex rounded-full border border-ink-700 bg-ink-900 p-1">
             {links.map((l) => (
-              <NavLink key={l.to} to={l.to} className={({ isActive }) => `relative rounded-full px-3 py-1.5 text-sm transition-colors sm:px-4 ${isActive ? "text-ink-950" : "text-slate-400 hover:text-bone"}`}>
+              <NavLink key={l.to} to={l.to} className={({ isActive }) => `relative rounded-full px-2.5 py-1.5 text-sm transition-colors sm:px-4 ${isActive ? "text-ink-950" : "text-slate-400 hover:text-bone"}`}>
                 {({ isActive }) => (
                   <>
                     {isActive && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-full bg-bone" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}

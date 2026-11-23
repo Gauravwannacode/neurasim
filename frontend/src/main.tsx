@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { MotionConfig } from "motion/react";
 import App from "./App";
 import { prefersReducedMotion } from "./lib/motion";
+import "./lib/history"; // record edits from the first one, whichever page makes it
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

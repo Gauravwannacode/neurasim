@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { MODEL_LABELS, NEURON_MODELS, INPUT_KINDS, INPUT_LABELS, makeInput, makePopulation, starterNetwork } from "../lib/network";
 import { prefersReducedMotion, setMotion } from "../lib/motion";
 import { useNetworkStore } from "../lib/store";
+import { useHistory } from "../lib/history";
 import { useSimStore } from "../lib/simStore";
 
 interface Command { group: string; label: string; run: () => void }
@@ -41,12 +42,15 @@ export default function CommandPalette({ open, setOpen }: { open: boolean; setOp
     const store = useNetworkStore.getState;
     return [
       { group: "Simulate", label: "Run the current network", run: () => navigate("/dashboard", { state: { autorun: true } }) },
+      { group: "Simulate", label: "Pin this run for comparison", run: () => useSimStore.getState().pin() },
       { group: "Simulate", label: "Stop the run", run: () => useSimStore.getState().stop() },
       ...PRESETS.map(([id, t]) => ({ group: "Circuits", label: `Run ${t}`, run: () => navigate(`/presets?run=${id}`) })),
       ...NEURON_MODELS.map((m) => ({ group: "Build", label: `Add ${MODEL_LABELS[m]} population`, run: () => { navigate("/builder"); store().addPopulation(makePopulation(m)); } })),
       ...INPUT_KINDS.map((k) => ({ group: "Build", label: `Add ${INPUT_LABELS[k]} input`, run: () => { navigate("/builder"); store().addInput(makeInput(k)); } })),
+      { group: "Build", label: "Undo", run: () => useHistory.getState().undo() },
+      { group: "Build", label: "Redo", run: () => useHistory.getState().redo() },
       { group: "Build", label: "Start over from the starter network", run: () => { navigate("/builder"); store().setNetwork(starterNetwork()); } },
-      ...[["Builder", "/builder"], ["Dashboard", "/dashboard"], ["Circuits", "/presets"], ["Benchmark", "/benchmark"], ["Home page", "/"]].map(([l, to]) => ({ group: "Go to", label: l, run: () => navigate(to) })),
+      ...[["Builder", "/builder"], ["Dashboard", "/dashboard"], ["Explore", "/explore"], ["Circuits", "/presets"], ["Benchmark", "/benchmark"], ["Home page", "/"]].map(([l, to]) => ({ group: "Go to", label: l, run: () => navigate(to) })),
       { group: "Settings", label: prefersReducedMotion() ? "Turn motion on" : "Turn motion off", run: () => setMotion(prefersReducedMotion()) },
     ];
   }, [navigate]);

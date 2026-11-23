@@ -9,6 +9,7 @@ const Landing = lazy(() => import("./pages/Landing"));
 const Builder = lazy(() => import("./pages/Builder"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Presets = lazy(() => import("./pages/Presets"));
+const Explore = lazy(() => import("./pages/Explore"));
 const Benchmark = lazy(() => import("./pages/Benchmark"));
 
 const Loading = () => <div className="p-8 text-slate-500">Loading…</div>;
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/builder" element={<Builder />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/presets" element={<Presets />} />
+            <Route path="/explore" element={<Explore />} />
             <Route path="/benchmark" element={<Benchmark />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

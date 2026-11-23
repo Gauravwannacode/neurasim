@@ -46,6 +46,13 @@ export interface SimSummary {
   weight_histograms: Record<string, { bins: number[]; initial: number[]; final: number[] }>;
 }
 
+export interface PinnedRun {
+  meta: SimMeta;
+  network: Network;
+  spikes: Record<string, { t: number[]; id: number[] }>;
+  summary: SimSummary;
+}
+
 interface Chunk {
   t0: number;
   t1: number;
@@ -81,6 +88,10 @@ interface SimState {
   synopsTimes: number[];
   synops: number[];
   summary: SimSummary | null;
+  /** A finished run kept for comparison; survives later runs. */
+  pinned: PinnedRun | null;
+  pin: () => void;
+  unpin: () => void;
   start: (net: Network, paceMs: number) => Promise<void>;
   stop: () => void;
 }
@@ -108,7 +119,15 @@ export const useSimStore = create<SimState>((set, get) => ({
   status: "idle",
   version: 0,
   network: null,
+  pinned: null,
   ...empty(),
+
+  pin() {
+    const { status, meta, network, spikes, summary } = get();
+    // Each run starts with fresh arrays, so keeping these references is safe.
+    if (status === "done" && meta && network && summary) set({ pinned: { meta, network, spikes, summary } });
+  },
+  unpin: () => set({ pinned: null }),
 
   stop() {
     controller?.abort();

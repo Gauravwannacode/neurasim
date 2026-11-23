@@ -28,7 +28,7 @@ const SPEEDS = [
 
 export default function Dashboard() {
   const network = useNetworkStore((s) => s.network);
-  const { status, error, progress, meta, summary, start, stop } = useSimStore();
+  const { status, error, progress, meta, summary, start, stop, pinned, pin } = useSimStore();
   const runNetwork = useSimStore((s) => s.network);
   const location = useLocation();
   const navigate = useNavigate();
@@ -61,7 +61,7 @@ export default function Dashboard() {
             {stale && !running && <span className="ml-2 text-amber-300">network edited since this run</span>}
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <select className="input w-auto py-1 text-xs" value={pace} onChange={(e) => setPace(Number(e.target.value))} disabled={running}>
             {SPEEDS.map((s) => (
               <option key={s.pace} value={s.pace}>{s.label}</option>
@@ -74,6 +74,10 @@ export default function Dashboard() {
               {status === "idle" ? "Run" : "Re-run"}
             </button>
           )}
+          <button className="btn-ghost" disabled={status !== "done" || pinned?.summary === summary} onClick={pin} title="Keep this run to compare with a later one">
+            {pinned && pinned.summary === summary ? "Pinned" : "Pin"}
+          </button>
+          {pinned && <Link to="/explore" className="btn-ghost">Compare</Link>}
           <RunExportButtons />
         </div>
         <div className="h-1 w-full overflow-hidden rounded bg-ink-700">

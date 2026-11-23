@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from . import __version__
 from .auth import User, current_user
 from .config import settings
-from .routers import benchmark, export, presets, simulate
+from .routers import benchmark, export, presets, simulate, sweep
 
 app = FastAPI(title="NeuraSim API", version=__version__, description="Spiking Neural Network simulator backend")
 
@@ -30,6 +30,7 @@ async def validation_error(_request: Request, exc: RequestValidationError) -> JS
 
 
 app.include_router(simulate.router)
+app.include_router(sweep.router)
 app.include_router(benchmark.router)
 app.include_router(presets.router)
 app.include_router(export.router)

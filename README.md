@@ -16,7 +16,7 @@ With NeuraSim you can:
   weight evolution, and an **energy estimate** that compares the SNN's synaptic operations with the multiply-accumulates
   an equivalent ANN would need.
 * **Benchmark** a spiking network against a conventional ANN on spike-encoded **MNIST**, comparing accuracy, latency and
-  estimated energy, with a plain-English explanation of where the efficiency comes from.
+  estimated energy, with a plain-English explanation of when spiking is (and is not) more efficient.
 * **Explore** five classic circuits from computational neuroscience: Winner-Take-All, Central Pattern Generator,
   Echo State Network (liquid state machine), STDP learning, and a V1 cortical column.
 * **Export** networks as re-importable JSON, spike rasters as CSV, and simulation runs as a PDF report.
@@ -44,7 +44,7 @@ extended.
 
 ## 1. Quick start
 
-**Requirements:** Python ≥ 3.11 and Node.js ≥ 20.
+**Requirements:** Python 3.13 and Node.js 24 (the versions it was tested with).
 
 ```bash
 # Backend (FastAPI): http://localhost:8000
@@ -134,7 +134,7 @@ of the squid giant axon, and the action potential *emerges* from the equations i
 
 $$C_m \dot V = I - \bar g_\text{Na} m^3 h (V - E_\text{Na}) - \bar g_\text{K} n^4 (V - E_\text{K}) - g_L (V - E_L), \qquad \dot x = \alpha_x(V)(1-x) - \beta_x(V)x$$
 
-for the gating variables x ∈ {m, h, n}. HH is about 100× more expensive than LIF, but it is the gold standard for
+for the gating variables x ∈ {m, h, n}. HH is far more expensive to simulate than LIF, but it is the gold standard for
 biophysical realism.
 
 ### 2.4 Synapses, delays and Dale's principle
@@ -313,13 +313,14 @@ network on the server and reproduce exactly the run shown in the browser.
 
 `POST /simulate/stream?pace_ms=40` responds with `text/event-stream`. The browser cannot `POST` with `EventSource`, so
 `frontend/src/lib/api.ts` implements a small SSE parser on top of `fetch` and `ReadableStream`. The stream contains
-three kinds of event:
+these events:
 
 | event | payload |
 |---|---|
 | `meta` | layout of all groups (global id offsets), recorded neuron ids, thresholds, plastic projections |
 | `chunk` (every `chunk_ms`) | spikes `{t[], id[]}`, per-group firing rates, voltage samples, STDP weight means and samples, cumulative SynOps |
 | `done` | wall-clock time, total spikes, mean rates, energy estimate, initial/final weight histograms |
+| `error` | message, if a limit is exceeded or the integration becomes unstable |
 
 The simulator itself is a Python generator. FastAPI advances it in a thread pool, one chunk at a time, and stops if the
 client disconnects. `pace_ms` adds an optional delay between chunks so small networks can be watched evolving
@@ -379,22 +380,31 @@ MNIST training images (5 epochs, Adam) and evaluates both on 5,000 test images, 
   highest peak membrane potential wins. It is trained end-to-end with **surrogate gradients**. If Norse is not installed,
   an equivalent built-in implementation is used.
 
-Results committed in `results.json` (Norse 1.1.0, PyTorch 2.x CPU):
+Results committed in `results.json` (Norse 1.1.0, PyTorch 2.x CPU, one seed):
 
 | | ANN | SNN |
 |---|---|---|
-| Test accuracy | **95.7 %** | 94.5 % |
-| Operations / inference | 203,264 MACs | 173,879 SynOps (ACs) |
-| Estimated energy / inference | 935 nJ | **157 nJ (≈ 6.0× less)** |
-| CPU latency (batched) | **0.001 ms** | 0.185 ms |
-| Training time | 1.5 s | 73 s |
+| Test accuracy | **95.7 %** | 94.7 % |
+| Synaptic operations / inference | 203,264 MACs (40,249 with non-zero operands) | 173,970 SynOps (ACs) |
+| Neuron-state updates / inference | none counted | 17,024 MACs |
+| Estimated energy, favourable count | **185 nJ** (skipping zeros) | **157 nJ** (synapses only) |
+| Estimated energy, unfavourable count | 935 nJ (fully dense) | 235 nJ (with neuron updates) |
+| CPU latency (batches of 500) | **0.002 ms** | 0.19 ms (including spike encoding) |
+| Training time | 1.7 s | 65 s |
 
-**How to read these numbers.** The SNN reaches almost the same accuracy for about one-sixth of the estimated arithmetic
-energy, because only bright pixels emit spikes (~660 input spikes per digit) and hidden neurons fire sparsely (~51 Hz, i.e. about 1.6 spikes each per 32 ms digit).
-On a CPU, however, the SNN is **slower** and trains more slowly, because conventional hardware has to simulate every one
-of its 32 time steps. The energy advantage is realised only on event-driven neuromorphic hardware, and it grows on data
-that is naturally sparse and temporal (event cameras, audio, neural recordings). MNIST is a static image dataset and
-is close to the worst case for SNNs. The benchmark page explains these points next to the charts.
+**How to read these numbers.** The answer depends on the baseline:
+
+* Counting synaptic operations only, the SNN needs **6.0× less** energy than a *dense* ANN. This is the comparison most
+  often quoted for SNNs.
+* About 80 % of MNIST pixels are black. An ANN accelerator that skips zero operands does the same task for 185 nJ. Once
+  the SNN also pays for updating every neuron at every step (two decays per neuron per step) it costs 235 nJ, which is
+  **1.3× more** than the zero-skipping ANN.
+* On a CPU the SNN is about **two orders of magnitude slower**, because all 32 time steps have to be simulated.
+
+So on a small static-image task this SNN has **no clear energy advantage** over a sparsity-aware ANN. The case for SNNs
+rests on data that is itself sparse and temporal (event cameras, audio, neural recordings) and on event-driven hardware,
+in line with Pfeiffer & Pfeil (2018). The training-set size and epoch count were raised once, for both models, after an
+initial short run; the test set was not used to select anything else.
 
 You can retrain from the UI (**↻ Retrain both**, which streams progress over SSE) when PyTorch is installed on the server,
 or by running `python -m app.benchmark.mnist [--epochs 5 --train-size 30000 --timesteps 32 --hidden 256]`.
@@ -419,7 +429,8 @@ Interactive OpenAPI docs are available at `http://localhost:8000/docs`.
 | POST | `/export/pdf` | PDF report for the network |
 
 Simulation requests are limited by `MAX_NEURONS` (default 5,000) and `MAX_STEPS` (default 20,000, i.e. 2 s at
-dt = 0.1 ms). Requests over the limits return HTTP 422 with an explanation.
+dt = 0.1 ms) and `MAX_SYNAPSES` (default 4,000,000 potential synapses). Requests over the limits return HTTP 422, or an
+`error` event on the stream. At most `MAX_CONCURRENT` (default 2) simulations run at once; others queue.
 
 ---
 
@@ -481,15 +492,17 @@ the SPA rewrites. Add the environment variables `VITE_API_URL` (your Render URL)
 | `SUPABASE_URL` | Render | JWKS verification of access tokens |
 | `SUPABASE_JWT_SECRET` | Render | Legacy HS256 verification |
 | `REQUIRE_AUTH` | Render | `true` to reject guests |
-| `CORS_ORIGINS` | Render | Allowed origins (`*.vercel.app` is always allowed) |
-| `MAX_NEURONS`, `MAX_STEPS` | Render | Per-request safety limits |
+| `CORS_ORIGINS` | Render | Allowed browser origins, comma-separated |
+| `CORS_ORIGIN_REGEX` | Render | Optional regex for further origins, e.g. Vercel preview deployments |
+| `MAX_NEURONS`, `MAX_STEPS`, `MAX_SYNAPSES` | Render | Per-request safety limits |
+| `MAX_CONCURRENT` | Render | Simultaneous simulations |
 
 ---
 
 ## 9. Testing
 
 ```bash
-cd backend && python -m pytest        # 26 tests
+cd backend && python -m pytest        # 49 tests
 cd frontend && npm run typecheck && npm run build
 ```
 
@@ -501,6 +514,8 @@ The backend tests check the dynamics against theory:
 * HH is silent at 2 µA/cm² and fires at about 70 Hz at 10 µA/cm².
 * STDP potentiates for pre→post spike pairs and depresses for post→pre pairs.
 * Delays shift spike arrival by exactly delay/dt steps.
+* STDP weights stay inside [w_min, w_max], and the preset signatures (including V1's layer order) hold for several seeds.
+* Resource-exhausting requests are rejected, PDF text cannot inject markup, and auth fails closed.
 * Runs are deterministic, the SSE stream has the right shape, and invalid networks are rejected.
 * Every preset runs and shows its signature behaviour: the winner wins, the CPG alternates, and STDP separates the two
   input groups.
@@ -511,11 +526,13 @@ The backend tests check the dynamics against theory:
 ## 10. Limitations and future work
 
 * **Energy figures cover arithmetic only.** Memory access and data movement often dominate real energy budgets, and
-  neuromorphic chips have their own per-spike routing costs (e.g. ~24 pJ per synaptic op on Loihi). Treat the ratios as
+  neuromorphic chips have their own per-spike routing costs (e.g. ~24 pJ per synaptic op on Loihi). Neuron-state
+  updates are counted in the benchmark but not in the dashboard panel, and the dashboard's ANN baseline is dense, so its
+  ratios are upper bounds. Treat them as
   an illustration of operation-count sparsity, not as hardware measurements.
 * **Clock-driven simulation** with forward Euler limits precision for large `dt`. For HH, use dt ≤ 0.05 ms when accuracy
   matters.
-* **Dense weight matrices** limit projections to about 30 M potential synapses. Sparse (CSR) storage would allow larger
+* **Dense weight matrices** limit a network to `MAX_SYNAPSES` (4 M) potential synapses by default. Sparse (CSR) storage would allow larger
   networks.
 * **Current-based synapses.** Conductance-based synapses, short-term plasticity, triplet STDP and dendrites are natural
   next steps.

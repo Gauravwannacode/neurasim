@@ -104,7 +104,7 @@ export const synapseSchema = z.object({
   delay_ms: z.number().min(0).default(1),
   allow_autapses: z.boolean().default(false),
   plasticity: z.enum(["static", "stdp"]).default("static"),
-  stdp: stdpSchema.default({}),
+  stdp: stdpSchema.prefault({}),
 });
 export type Synapse = z.infer<typeof synapseSchema>;
 
@@ -122,7 +122,7 @@ export const networkSchema = z.object({
   name: z.string().default("Untitled network"),
   description: z.string().optional(),
   biology: z.string().optional(),
-  sim: simSchema.default({}),
+  sim: simSchema.prefault({}),
   populations: z.array(populationSchema),
   inputs: z.array(inputSchema).default([]),
   synapses: z.array(synapseSchema).default([]),

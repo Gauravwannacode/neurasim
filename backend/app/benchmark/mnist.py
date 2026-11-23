@@ -14,6 +14,12 @@ subset of MNIST on the CPU:
 Energy is estimated per inference from operation counts with the same
 Horowitz (2014) constants as the simulator (MAC 4.6 pJ, AC 0.9 pJ): the ANN
 needs one MAC per weight, the SNN one AC per *delivered spike* per synapse.
+Two further figures keep the comparison honest:
+
+* the SNN's neuron-state updates (two decays, i.e. 2 MACs, per neuron per step),
+  which synaptic operation counts leave out;
+* an ANN that skips multiplications by zero, as sparse accelerators do. Most
+  MNIST pixels are black, so this removes much of the SNN's apparent advantage.
 
 Run ``python -m app.benchmark.mnist`` (needs ``requirements-benchmark.txt``)
 to regenerate ``results.json``, which the API serves.
@@ -199,46 +205,69 @@ def run_benchmark(
                     )
         return curve, time.perf_counter() - t0
 
-    @torch.no_grad()
-    def evaluate_ann(model) -> dict:
-        t0 = time.perf_counter()
-        pred = model(x_test).argmax(1)
-        elapsed = time.perf_counter() - t0
-        macs = 784 * hidden + hidden * 10
+    EVAL_BATCH = 500
+
+    def timed(fn) -> tuple[list, float]:
+        """Run fn over the test set in equal batches; median wall time of three passes after a warm-up."""
+        batches = [x_test[b : b + EVAL_BATCH] for b in range(0, test_size, EVAL_BATCH)]
+        fn(batches[0])
+        times, out = [], []
+        for _ in range(3):
+            t0 = time.perf_counter()
+            out = [fn(x) for x in batches]
+            times.append(time.perf_counter() - t0)
+        return out, sorted(times)[1]
+
+    def scores(pred) -> dict:
         return {
             "accuracy": (pred == y_test).float().mean().item(),
+            "per_class": [
+                ((pred == y_test) & (y_test == c)).sum().item() / max(1, (y_test == c).sum().item()) for c in range(10)
+            ],
+        }
+
+    @torch.no_grad()
+    def evaluate_ann(model):
+        out, elapsed = timed(lambda x: model(x).argmax(1))
+        pred = torch.cat(out)
+        macs = 784 * hidden + hidden * 10
+        active_hidden = F.relu(model.fc1(x_test)) > 0
+        nonzero_macs = ((x_test > 0).sum().item() * hidden + active_hidden.sum().item() * 10) / test_size
+        return {
+            **scores(pred),
             "inference_ms_per_sample": 1000 * elapsed / test_size,
             "ops_per_sample": macs,
             "energy_nj_per_sample": macs * E_MAC_PJ / 1000,
-            "per_class": [((pred == y_test) & (y_test == c)).sum().item() / max(1, (y_test == c).sum().item()) for c in range(10)],
+            "nonzero_macs_per_sample": nonzero_macs,
+            "energy_zero_skipping_nj_per_sample": nonzero_macs * E_MAC_PJ / 1000,
         }, pred
 
     @torch.no_grad()
-    def evaluate_snn(model) -> dict:
+    def evaluate_snn(model):
         gen = torch.Generator().manual_seed(seed + 2)
-        preds, synops, in_spk, hid_spk = [], 0.0, 0.0, 0.0
-        t0 = time.perf_counter()
-        for b in range(0, test_size, 500):
-            x = x_test[b : b + 500]
+
+        def infer(x):
             s = encode(x, gen)
             logits, hs, _ = model(s)
-            preds.append(logits.argmax(1))
-            n_in, n_hid = s.sum().item(), hs.sum().item()
-            in_spk += n_in
-            hid_spk += n_hid
-            synops += n_in * hidden + n_hid * 10
-        elapsed = time.perf_counter() - t0
-        pred = torch.cat(preds)
-        ops = synops / test_size
+            return logits.argmax(1), s.sum(), hs.sum()
+
+        out, elapsed = timed(infer)
+        pred = torch.cat([o[0] for o in out])
+        in_spk = sum(o[1].item() for o in out) / test_size
+        hid_spk = sum(o[2].item() for o in out) / test_size
+        ops = in_spk * hidden + hid_spk * 10
+        update_macs = 2 * (hidden + 10) * timesteps
+        synaptic_nj = ops * E_AC_PJ / 1000
         return {
-            "accuracy": (pred == y_test).float().mean().item(),
+            **scores(pred),
             "inference_ms_per_sample": 1000 * elapsed / test_size,
             "ops_per_sample": ops,
-            "energy_nj_per_sample": ops * E_AC_PJ / 1000,
-            "input_spikes_per_sample": in_spk / test_size,
-            "hidden_spikes_per_sample": hid_spk / test_size,
-            "hidden_rate_hz": hid_spk / test_size / hidden / (timesteps * dt),
-            "per_class": [((pred == y_test) & (y_test == c)).sum().item() / max(1, (y_test == c).sum().item()) for c in range(10)],
+            "energy_nj_per_sample": synaptic_nj,
+            "neuron_update_macs_per_sample": update_macs,
+            "energy_with_updates_nj_per_sample": synaptic_nj + update_macs * E_MAC_PJ / 1000,
+            "input_spikes_per_sample": in_spk,
+            "hidden_spikes_per_sample": hid_spk,
+            "hidden_rate_hz": hid_spk / hidden / (timesteps * dt),
         }, pred
 
     report("train_ann", 0.02, "Training ANN", None)

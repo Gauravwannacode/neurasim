@@ -18,14 +18,24 @@ interface ModelResult {
   hidden_rate_hz?: number;
 }
 
+interface AnnResult extends ModelResult {
+  nonzero_macs_per_sample: number;
+  energy_zero_skipping_nj_per_sample: number;
+}
+
+interface SnnResult extends ModelResult {
+  neuron_update_macs_per_sample: number;
+  energy_with_updates_nj_per_sample: number;
+}
+
 interface BenchmarkResult {
   created_at: string;
   snn_backend: string;
   can_run: boolean;
   config: { train_size: number; test_size: number; epochs: number; hidden: number; timesteps: number; dt_ms: number; f_max_hz: number; torch: string };
   energy_constants: { e_mac_pj: number; e_ac_pj: number; source: string };
-  ann: ModelResult;
-  snn: ModelResult;
+  ann: AnnResult;
+  snn: SnnResult;
   example: {
     image: number[];
     label: number;
@@ -49,13 +59,13 @@ function Card({ title, children, className }: { title: string; children: ReactNo
   );
 }
 
-function ModelColumn({ name, color, r, energyRatio, ops }: { name: string; color: string; r: ModelResult; energyRatio?: number; ops: string }) {
+function ModelColumn({ name, color, r, energy, ops }: { name: string; color: string; r: ModelResult; energy: [string, string]; ops: string }) {
   return (
     <div className="rounded-xl border p-4" style={{ borderColor: `${color}55` }}>
       <h4 className="mb-3 text-lg font-semibold" style={{ color }}>{name}</h4>
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Test accuracy" value={`${(r.accuracy * 100).toFixed(2)}%`} />
-        <Stat label="Energy / inference" value={`${r.energy_nj_per_sample.toFixed(1)} nJ`} color={energyRatio ? "text-emerald-300" : undefined} sub={energyRatio ? `${energyRatio.toFixed(1)}× less` : undefined} />
+        <Stat label="Energy / inference" value={energy[0]} sub={energy[1]} />
         <Stat label={ops} value={Math.round(r.ops_per_sample).toLocaleString()} />
         <Stat label="CPU latency" value={`${r.inference_ms_per_sample.toFixed(3)} ms`} sub="per sample, batched" />
         <Stat label="Training time" value={`${r.train_time_s.toFixed(1)} s`} />
@@ -95,7 +105,7 @@ export default function Benchmark() {
   const charts = useMemo(() => {
     if (!res) return null;
     const { ann, snn, example, config } = res;
-    const compare = (title: string, a: number, s: number, fmt: (v: number) => string, log = false): [Data[], ReturnType<typeof baseLayout>] => [
+    const compare = (title: string, a: number, s: number, fmt: (v: number) => string): [Data[], ReturnType<typeof baseLayout>] => [
       [
         {
           type: "bar",
@@ -107,7 +117,27 @@ export default function Benchmark() {
           hoverinfo: "skip",
         },
       ],
-      baseLayout({ showlegend: false, margin: { l: 48, r: 8, t: 8, b: 28 }, yaxis: { title: { text: title }, type: log ? "log" : "linear" } }),
+      baseLayout({ showlegend: false, margin: { l: 48, r: 8, t: 8, b: 28 }, yaxis: { title: { text: title } } }),
+    ];
+    const energyValues = [
+      ann.energy_nj_per_sample,
+      ann.energy_zero_skipping_nj_per_sample,
+      snn.energy_nj_per_sample,
+      snn.energy_with_updates_nj_per_sample,
+    ];
+    const energy: [Data[], ReturnType<typeof baseLayout>] = [
+      [
+        {
+          type: "bar",
+          x: ["ANN<br>dense", "ANN<br>skip zeros", "SNN<br>synapses", "SNN<br>+ updates"],
+          y: energyValues,
+          marker: { color: [ANN_COLOR, "#64748b", SNN_COLOR, "#0284c7"] },
+          text: energyValues.map((v) => v.toFixed(0)),
+          textposition: "auto",
+          hoverinfo: "skip",
+        },
+      ],
+      baseLayout({ showlegend: false, margin: { l: 48, r: 8, t: 8, b: 40 }, yaxis: { title: { text: "nJ per inference" } } }),
     ];
     const curves: Data[] = [
       { type: "scatter", mode: "lines", y: ann.curve, x: ann.curve.map((_, i) => (i + 1) * 10), name: "ANN", line: { color: ANN_COLOR } },
@@ -142,7 +172,7 @@ export default function Benchmark() {
     }));
     return {
       acc: compare("accuracy (%)", ann.accuracy * 100, snn.accuracy * 100, (v) => `${v.toFixed(1)}%`),
-      energy: compare("nJ per inference (log)", ann.energy_nj_per_sample, snn.energy_nj_per_sample, (v) => `${v.toFixed(1)} nJ`, true),
+      energy,
       latency: compare("ms per sample (CPU)", ann.inference_ms_per_sample, snn.inference_ms_per_sample, (v) => `${v.toFixed(3)}`),
       curves,
       perClass,
@@ -192,8 +222,8 @@ export default function Benchmark() {
       {res && charts && (
         <>
           <div className="grid gap-4 md:grid-cols-2">
-            <ModelColumn name="Conventional ANN (ReLU MLP)" color={ANN_COLOR} r={res.ann} ops="MACs / inference" />
-            <ModelColumn name="Spiking NN (LIF, surrogate gradients)" color={SNN_COLOR} r={res.snn} ops="SynOps / inference" energyRatio={res.ann.energy_nj_per_sample / res.snn.energy_nj_per_sample} />
+            <ModelColumn name="Conventional ANN (ReLU MLP)" color={ANN_COLOR} r={res.ann} ops="MACs / inference" energy={[`${res.ann.energy_zero_skipping_nj_per_sample.toFixed(0)}–${res.ann.energy_nj_per_sample.toFixed(0)} nJ`, "skipping zeros – fully dense"]} />
+            <ModelColumn name="Spiking NN (LIF, surrogate gradients)" color={SNN_COLOR} r={res.snn} ops="SynOps / inference" energy={[`${res.snn.energy_nj_per_sample.toFixed(0)}–${res.snn.energy_with_updates_nj_per_sample.toFixed(0)} nJ`, "synapses only – with neuron updates"]} />
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
@@ -202,10 +232,10 @@ export default function Benchmark() {
             <Card title="Latency on a CPU"><div className="h-56"><Plot data={charts.latency[0]} layout={charts.latency[1]} /></div></Card>
           </div>
 
-          <Card title="Why is the SNN cheaper? (in plain English)">
+          <Card title="When is an SNN more efficient? (in plain English)">
             <div className="grid gap-4 text-sm leading-relaxed text-slate-300 md:grid-cols-3">
               <p>
-                <b className="text-slate-100">Work happens only when something changes.</b> An ANN multiplies every input by every weight for every image:{" "}
+                <b className="text-slate-100">Work happens only when something changes.</b> A dense ANN multiplies every input by every weight for every image:{" "}
                 {Math.round(res.ann.ops_per_sample).toLocaleString()} multiply-accumulates, even for the black background that makes up most of an MNIST digit.
                 The SNN's input neurons fire only for bright pixels, so on average only{" "}
                 {res.snn.input_spikes_per_sample?.toFixed(0)} input spikes travel through the network per digit.
@@ -217,13 +247,23 @@ export default function Benchmark() {
               </p>
               <p>
                 <b className="text-slate-100">The catch: time and hardware.</b> The SNN processes each digit over {res.config.timesteps} time steps, so on a CPU or GPU that simulates
-                every step it is <i>slower</i> (see latency). The energy advantage is realised on event-driven neuromorphic chips (e.g. Intel Loihi, SpiNNaker, IBM TrueNorth)
-                that only spend energy when spikes occur, and it grows with sparser, temporal data such as event-camera or audio streams.
+                every step it is <i>slower</i> (see latency). Any energy advantage needs event-driven neuromorphic chips (e.g. Intel Loihi, SpiNNaker, IBM TrueNorth)
+                that spend energy mainly when spikes occur, and sparse, temporal data such as event-camera or audio streams.
               </p>
             </div>
-            <p className="mt-3 text-xs text-slate-500">
-              Estimates count arithmetic only (no memory access or data movement), which typically dominates in practice; treat the ratio as an upper bound on the
-              compute saving. Accuracy here is limited by the short, small training run ({res.config.train_size.toLocaleString()} images × {res.config.epochs} epochs).
+            <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm leading-relaxed text-slate-300">
+              <b className="text-slate-100">So who wins here? It depends on the baseline.</b> Counting synapses only, the SNN needs{" "}
+              {(res.ann.energy_nj_per_sample / res.snn.energy_nj_per_sample).toFixed(1)}× less energy than a dense ANN. But most MNIST pixels are black, and an
+              ANN accelerator that skips zeros needs only {res.ann.energy_zero_skipping_nj_per_sample.toFixed(0)} nJ, while updating every SNN neuron on every
+              step brings the SNN to {res.snn.energy_with_updates_nj_per_sample.toFixed(0)} nJ. On that comparison the SNN uses{" "}
+              {res.snn.energy_with_updates_nj_per_sample > res.ann.energy_zero_skipping_nj_per_sample
+                ? `${(res.snn.energy_with_updates_nj_per_sample / res.ann.energy_zero_skipping_nj_per_sample).toFixed(1)}× more`
+                : `${(res.ann.energy_zero_skipping_nj_per_sample / res.snn.energy_with_updates_nj_per_sample).toFixed(1)}× less`}{" "}
+              energy. A static image shown for {res.config.timesteps} steps does not play to an SNN&apos;s strengths.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Estimates count arithmetic only; memory access and data movement usually dominate in practice. Both networks are limited by the short training run
+              ({res.config.train_size.toLocaleString()} images × {res.config.epochs} epochs).
             </p>
           </Card>
 

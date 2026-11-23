@@ -1,5 +1,9 @@
 # NeuraSim: an interactive Spiking Neural Network simulator
 
+[![CI](https://github.com/Gauravwannacode/neurasim/actions/workflows/ci.yml/badge.svg)](https://github.com/Gauravwannacode/neurasim/actions/workflows/ci.yml)
+
+![The NeuraSim landing page: "Think in spikes." above a sheet of simulated neurons](docs/landing.png)
+
 NeuraSim is a full-stack, browser-based laboratory for **spiking neural networks (SNNs)**, the biologically realistic
 "third generation" of neural networks (Maass, 1997). In an SNN, neurons communicate with discrete, all-or-nothing
 **spikes** that happen at particular moments in time. Conventional artificial neural networks (ANNs) pass continuous numbers
@@ -19,6 +23,9 @@ With NeuraSim you can:
   estimated energy, with a plain-English explanation of when spiking is (and is not) more efficient.
 * **Explore** five classic circuits from computational neuroscience: Winner-Take-All, Central Pattern Generator,
   Echo State Network (liquid state machine), STDP learning, and a V1 cortical column.
+* **Replay** any run in 3D, with a time scrubber and every neuron flashing as it spikes.
+* **Ask "what if"**: sweep one parameter across up to 25 runs, or pin a run and compare it with the next one.
+* **Share** a network as a link. The whole network travels inside the link, so nothing is stored on a server.
 * **Export** networks as re-importable JSON, spike rasters as CSV, and simulation runs as a PDF report.
 
 It is meant for teaching, for project submissions, and for conference demos, and it is written to be read and
@@ -45,6 +52,11 @@ extended.
 ## 1. Quick start
 
 **Requirements:** Python 3.13 and Node.js 24 (the versions it was tested with).
+
+```bash
+git clone https://github.com/Gauravwannacode/neurasim.git
+cd neurasim
+```
 
 ```bash
 # Backend (FastAPI): http://localhost:8000
@@ -219,6 +231,7 @@ flowchart LR
     SIM --> Y[synapses.py<br/>delays · STDP]
     SIM --> I[inputs.py<br/>Poisson · rate · pattern]
     SIM --> EN[energy.py<br/>SynOps vs MACs]
+    R5[/sweep/] --> SIM
     R2[/presets/] --> PJ[(presets/*.json)]
     R3[/benchmark/] --> MN[mnist.py<br/>PyTorch + Norse]
     R4[/export/] --> RP[report.py<br/>reportlab + matplotlib]
@@ -244,8 +257,8 @@ neurasim/
 │   │   │   ├── inputs.py        Poisson / rate / pattern spike generators
 │   │   │   ├── simulator.py     clock-driven loop, streaming event generator
 │   │   │   └── energy.py        SNN vs ANN energy model
-│   │   ├── routers/             simulate · presets · benchmark · export
-│   │   ├── presets/             build.py (source of truth) + generated *.json
+│   │   ├── routers/             simulate · sweep · presets · benchmark · export
+│   │   ├── presets/             build.py (source of truth), previews.py (website data) + generated *.json
 │   │   ├── benchmark/           mnist.py + cached results.json
 │   │   └── report.py            CSV and PDF generation
 │   └── tests/                   pytest suite (dynamics, STDP, delays, SSE, presets, export)
@@ -254,8 +267,10 @@ neurasim/
 │       ├── lib/                 network schema (zod), stores, API/SSE client, auth
 │       ├── components/builder/  React Flow canvas, custom nodes/edges, inspector
 │       ├── components/viz/      Plotly wrapper and the dashboard charts
+│       ├── components/three/    WebGL scenes: landing-page neural sheet, 3D replay
+│       ├── components/fx/       motion components: spiking headline, neuron scope, rasters
 │       ├── components/export/   JSON / CSV / PDF buttons
-│       └── pages/               Login, Builder, Dashboard, Presets, Benchmark
+│       └── pages/               Landing, Login, Builder, Dashboard, Explore, Presets, Benchmark
 └── render.yaml                  Render blueprint for the API
 ```
 
@@ -350,10 +365,18 @@ local development and public demos frictionless. Signed-in users' names appear o
 
 * **Builder.** Add populations and inputs from the left palette. Drag from a node's right handle onto a population to
   create a synapse. Select anything to edit it in the inspector, and press *Delete* to remove it. Excitatory projections
-  are drawn as blue arrows, inhibitory ones end in a red dot, and plastic ones are animated dashes. After a run, nodes
+  are drawn as warm arrows, inhibitory ones are blue and end in a dot, and plastic ones are animated dashes. After a run, nodes
   glow according to their firing rate, and STDP edges show their learned mean weight.
 * **Dashboard.** Choose a playback speed and press **Run**. The raster, voltage traces, activity heatmap, weight chart
   and energy panel fill in as the stream arrives. Use **CSV** and **PDF report** to export the finished run.
+* **3D replay.** Drag to orbit, scrub through time, and follow activity along the links. Groups sit where you placed
+  them in the builder.
+* **Explore.** *Sweep a value* plots every population's mean rate against one parameter (an f-I curve, for example).
+  *Compare two runs* shows a pinned run next to the latest one, with a table of differences.
+* **Shortcuts.** Ctrl+K opens the command palette; Ctrl+Z and Ctrl+Shift+Z undo and redo in the builder. **Tour** walks
+  through the builder in four steps.
+* **Motion.** Animation follows your system's reduced-motion setting. Override it with the Motion switch on the landing
+  page or from the command palette.
 * **Presets.** Each card explains the circuit and its biological inspiration and lists references. **Open in builder**
   loads it for editing, and **Run** simulates it immediately.
 
@@ -364,6 +387,9 @@ local development and public demos frictionless. Signed-in users' names appear o
 | **Echo State Network** | A 400-neuron balanced reservoir turns a repeating input sequence into rich, irregular but reproducible activity. |
 | **STDP learning** | With identical 20 Hz rates, synapses from the *correlated* afferents strengthen and those from the *random* afferents weaken. |
 | **V1 column** | Thalamic input (100-600 ms) drives L4 first, then L2/3, then the bursting L5 output layer. |
+
+![Dashboard with the 3D replay of the V1 column](docs/dashboard.png)
+![Sweeping the bias of one group in the Winner-Take-All circuit: as it rises, the competitors fall silent](docs/sweep.png)
 
 * **Import/Export.** **Export JSON** writes the exact network, and **Import** accepts that file or any preset file.
 
@@ -421,6 +447,7 @@ Interactive OpenAPI docs are available at `http://localhost:8000/docs`.
 | GET | `/me` | Current user (or guest) |
 | POST | `/simulate` | Run a network; returns all recorded data as one JSON object |
 | POST | `/simulate/stream?pace_ms=0..500` | Run a network, streaming `meta` / `chunk` / `done` SSE events |
+| POST | `/sweep` | Run a network once per value of one parameter; SSE `point` / `done` / `error` |
 | GET | `/presets` | Preset summaries (description, biology, references, stats) |
 | GET | `/presets/{id}` | Full preset, including its network |
 | GET | `/benchmark` | Cached MNIST benchmark results |
@@ -502,7 +529,7 @@ the SPA rewrites. Add the environment variables `VITE_API_URL` (your Render URL)
 ## 9. Testing
 
 ```bash
-cd backend && python -m pytest        # 49 tests
+cd backend && python -m pytest        # 58 tests
 cd frontend && npm run typecheck && npm run build
 ```
 
@@ -519,11 +546,17 @@ The backend tests check the dynamics against theory:
 * Runs are deterministic, the SSE stream has the right shape, and invalid networks are rejected.
 * Every preset runs and shows its signature behaviour: the winner wins, the CPG alternates, and STDP separates the two
   input groups.
+* Parameter sweeps reproduce the LIF rheobase and reject unsafe requests.
 * The CSV and PDF exports are well-formed.
 
 ---
 
 ## 10. Limitations and future work
+
+* **GitHub sign-in and cloud deployment** are implemented and documented but have not been exercised against real
+  Supabase, Render and Vercel accounts. Token verification is covered by unit tests.
+* **Phones** can run and watch networks; editing in the builder needs a wider screen.
+* **Share links** are limited to about 30,000 characters; export larger networks as JSON.
 
 * **Energy figures cover arithmetic only.** Memory access and data movement often dominate real energy budgets, and
   neuromorphic chips have their own per-spike routing costs (e.g. ~24 pJ per synaptic op on Loihi). Neuron-state
@@ -542,6 +575,9 @@ The backend tests check the dynamics against theory:
 ---
 
 ## 11. References
+
+The site's motion design takes ideas from [React Bits](https://reactbits.dev) and [Framer](https://www.framer.com); all
+components here are original. Released under the [MIT licence](LICENSE).
 
 **Key papers**
 
